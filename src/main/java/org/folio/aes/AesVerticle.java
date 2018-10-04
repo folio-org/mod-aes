@@ -14,21 +14,17 @@ public class AesVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(AesVerticle.class);
 
-  private int port;
-  private String kafkaUrl; // assume only one now
-  private AesService aesService;
-
   @Override
   public void start(Future<Void> fut) throws Exception {
 
-    port = Integer.parseInt(
+    int port = Integer.parseInt(
       System.getProperty("port",
         System.getProperty("http.port",
           "" + context.config().getInteger("port", 8081))));
 
-    kafkaUrl = System.getProperty("kafka.url", "");
+    String kafkaUrl = System.getProperty("kafka.url", "");
 
-    aesService = new AesService(vertx, kafkaUrl);
+    AesService aesService = new AesService(vertx, kafkaUrl);
 
     Router router = Router.router(vertx);
     // root

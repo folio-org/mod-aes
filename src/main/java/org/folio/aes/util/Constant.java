@@ -2,6 +2,9 @@ package org.folio.aes.util;
 
 public class Constant {
 
+  private Constant() {
+  }
+
   public static final String MOD_NAME = "mod-aes";
   public static final String OKAPI_TENANT = "x-okapi-tenant";
   public static final String OKAPI_FILTER = "x-okapi-filter";

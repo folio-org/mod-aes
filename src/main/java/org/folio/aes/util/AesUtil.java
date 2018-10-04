@@ -10,6 +10,9 @@ import io.vertx.core.json.JsonObject;
 
 public class AesUtil {
 
+  private AesUtil() {
+  }
+
   /**
    * Decode Okapi token to {@link JsonObject}
    *

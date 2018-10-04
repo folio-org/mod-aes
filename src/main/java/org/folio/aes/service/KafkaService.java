@@ -120,8 +120,10 @@ public class KafkaService implements QueueService {
 
   // just for quick testing
   public static void main(String[] args) {
-    String kafkaUrl = "10.23.33.20:9092"; // dev-dmz instance
-    // String kafkaUrl = "10.23.32.4:9092"; // another instance from Tanuja
+
+    String kafkaUrl = "";
+    // String kafkaUrl = "10.23.33.20:9092"; // dev-dmz instance
+    // String kafkaUrl = "10.23.32.4:9092"; // another instance
 
     Vertx vertx = Vertx.vertx();
     KafkaService kafkaService = new KafkaService(vertx);
@@ -133,9 +135,7 @@ public class KafkaService implements QueueService {
       futures.add(future);
       kafkaService.send(kafkaUrl, "hji-test", "testing " + i, future);
     }
-    CompositeFuture.join(futures).setHandler(ar -> {
-      kafkaService.stop(res -> vertx.close());
-    });
+    CompositeFuture.join(futures).setHandler(ar -> kafkaService.stop(res -> vertx.close()));
   }
 
 }
