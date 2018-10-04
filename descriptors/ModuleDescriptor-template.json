@@ -1,0 +1,39 @@
+{
+  "id": "${artifactId}-${version}",
+  "name": "AES Module",
+  "filters": [
+    {
+      "methods": [
+        "*"
+      ],
+      "pathPattern": "/*",
+      "phase": "pre",
+      "type": "request-only"
+    },
+    {
+      "methods": [
+        "*"
+      ],
+      "pathPattern": "/*",
+      "phase": "post",
+      "type": "request-only"
+    }
+  ],
+  "provides": [],
+  "permissionSets": [],
+  "launchDescriptor": {
+    "dockerImage": "${artifactId}:${version}",
+    "dockerArgs": {
+      "HostConfig": {
+        "PortBindings": {
+          "8081/tcp": [
+            {
+              "HostPort": "%p"
+            }
+          ]
+        }
+      }
+    },
+    "dockerPull": false
+  }
+}
