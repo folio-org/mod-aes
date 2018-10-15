@@ -28,7 +28,7 @@ Edit the docker-compose.yml file as follows:
 version: '2'
 services:
   zookeeper:
-    image: 31z4/zookeeper
+    image: zookeeper
     restart: always
     hostname: zoo1
     ports:
