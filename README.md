@@ -33,8 +33,6 @@ services:
     hostname: zoo1
     ports:
       - 2181:2181
-      - 3888:3888
-      - 2888:2888
     environment:
       ZOO_MY_ID: 1
       ZOO_SERVERS: server.1=<ZOOKEEPER_IP>:2888:3888
@@ -53,7 +51,7 @@ If running on the same machine the `KAFKA_IP` and `ZOOKEEPER_IP` will be the sam
 
 Execute the container as follows:
 - Start: `$ /usr/local/bin/docker-compose up -d`
-- Stop: `/usr/local/bin/docker-compose stop`
+- Stop: `$ /usr/local/bin/docker-compose stop`
 
 Note: you may need to be root (sudo) to do this.
 
