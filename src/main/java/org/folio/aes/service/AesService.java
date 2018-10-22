@@ -33,6 +33,7 @@ public class AesService {
     String phase = "" + ctx.request().headers().get(OKAPI_FILTER);
     if (phase.startsWith(PHASE_PRE) || phase.startsWith(PHASE_POST)) {
       JsonObject data = collectData(ctx);
+      logger.debug(data.encodePrettily());
       if (kafkaService != null) {
         String topic = ctx.request().headers().get(OKAPI_TENANT);
         topic = topic == null ? TENANT_DEFAULT : topic;
@@ -49,12 +50,13 @@ public class AesService {
     data.put("params", AesUtil.convertMultiMapToJsonObject(ctx.request().params()));
     String bodyString = ctx.getBodyAsString();
     if (bodyString.length() > BODY_LIMIT) {
-      data.put("body", bodyString.substring(0, BODY_LIMIT) + "...");
+      data.put("body", new JsonObject().put("content",
+        bodyString.substring(0, BODY_LIMIT) + "..."));
     } else {
       try {
         data.put("body", new JsonObject(bodyString));
       } catch (Exception e) {
-        data.put("body", bodyString);
+        data.put("body", new JsonObject().put("content", bodyString));
       }
     }
     return data;
