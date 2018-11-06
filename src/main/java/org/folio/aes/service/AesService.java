@@ -54,7 +54,9 @@ public class AesService {
         bodyString.substring(0, BODY_LIMIT) + "..."));
     } else {
       try {
-        data.put("body", new JsonObject(bodyString));
+        JsonObject bodyJsonObject = new JsonObject(bodyString);
+        AesUtil.maskPassword(bodyJsonObject);
+        data.put("body", bodyJsonObject);
       } catch (Exception e) {
         data.put("body", new JsonObject().put("content", bodyString));
       }

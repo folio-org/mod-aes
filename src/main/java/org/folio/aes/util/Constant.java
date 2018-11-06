@@ -1,9 +1,15 @@
 package org.folio.aes.util;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class Constant {
 
   private Constant() {
   }
+
+  public static List<String> PASSWORDS = Arrays.asList("password", "newPassword");
+  public static final String PASSWORD_MASK = "xxx";
 
   public static final String MOD_NAME = "mod-aes";
   public static final String OKAPI_TENANT = "x-okapi-tenant";
