@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 
 import org.folio.aes.util.AesUtil;
 import org.junit.Test;
@@ -26,15 +27,12 @@ public class AesUtilTest {
   }
 
   @Test
-  public void testHasJsonPathPositive() {
-    String jsonpath = "$.store.book[?(@.price < 10)]";
-    assertTrue(AesUtil.hasJsonPath(jsonpathTestContent, jsonpath));
-  }
-
-  @Test
-  public void testHasJsonPathNegative() {
-    String jsonpath = "$.store.book[?(@.price > 1000)]";
-    assertFalse(AesUtil.hasJsonPath(jsonpathTestContent, jsonpath));
+  public void testHasJsonPath() {
+    String goodJsonPath = "$.store.book[?(@.price < 10)]";
+    String badJsonPath = "$.store.book[?(@.price > 100)]";
+    List<Boolean> rs = AesUtil.hasJsonPath(jsonpathTestContent, Arrays.asList(goodJsonPath, badJsonPath));
+    assertTrue(rs.get(0));
+    assertFalse(rs.get(1));
   }
 
   @Test

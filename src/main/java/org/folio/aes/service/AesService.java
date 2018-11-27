@@ -2,7 +2,11 @@ package org.folio.aes.service;
 
 import static org.folio.aes.util.Constant.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.folio.aes.util.AesUtil;
+import org.folio.aes.util.Constant;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -37,7 +41,23 @@ public class AesService {
       if (kafkaService != null) {
         String topic = ctx.request().headers().get(OKAPI_TENANT);
         topic = topic == null ? TENANT_DEFAULT : topic;
-        kafkaService.send(kafkaUrl, topic, data.encodePrettily());
+
+        String msg = data.encodePrettily();
+        // always send one copy to default tenant topic
+        kafkaService.send(kafkaUrl, topic, msg);
+        // send to specific topic selectively
+        // TODO: assuming some routing rules from configuration
+        List<JsonObject> list = new ArrayList<>();
+        List<String> jsonPaths = new ArrayList<>();
+        for (JsonObject jo : list) {
+          jsonPaths.add(jo.getString(Constant.ROUTING_CRITERIA));
+        }
+        List<Boolean> rs = AesUtil.hasJsonPath(data.toString(), jsonPaths);
+        for (int i = 0; i < rs.size(); i++) {
+          if (rs.get(i)) {
+            kafkaService.send(kafkaUrl, topic + "_" + list.get(i).getString(Constant.ROUTING_TARGET), msg);
+          }
+        }
       }
     }
     ctx.response().end();
