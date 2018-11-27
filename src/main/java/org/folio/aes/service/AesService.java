@@ -25,7 +25,7 @@ public class AesService {
     this.kafkaUrl = kafkaUrl;
     if (kafkaUrl != null && !kafkaUrl.isEmpty()) {
       logger.info("Initialize KafkaService");
-      kafkaService = new KafkaService(this.vertx);
+      kafkaService = new KafkaService(this.vertx, kafkaUrl);
     }
   }
 
