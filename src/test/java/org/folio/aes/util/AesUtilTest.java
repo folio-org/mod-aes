@@ -2,6 +2,9 @@ package org.folio.aes.util;
 
 import static org.junit.Assert.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 import org.folio.aes.util.AesUtil;
@@ -11,6 +14,28 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 
 public class AesUtilTest {
+
+  private static final String jsonpathTestContent;
+  static {
+    try {
+      Path path = Paths.get(AesUtilTest.class.getClassLoader().getResource("jsonpath.json").toURI());
+      jsonpathTestContent = new String(Files.readAllBytes(path));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void testHasJsonPathPositive() {
+    String jsonpath = "$.store.book[?(@.price < 10)]";
+    assertTrue(AesUtil.hasJsonPath(jsonpathTestContent, jsonpath));
+  }
+
+  @Test
+  public void testHasJsonPathNegative() {
+    String jsonpath = "$.store.book[?(@.price > 1000)]";
+    assertFalse(AesUtil.hasJsonPath(jsonpathTestContent, jsonpath));
+  }
 
   @Test
   public void testConvertMultiMapToJsonObject() {

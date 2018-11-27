@@ -1,5 +1,12 @@
 package org.folio.aes.util;
 
+import java.util.List;
+
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.ReadContext;
+
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -7,6 +14,24 @@ import io.vertx.core.json.JsonObject;
 public class AesUtil {
 
   private AesUtil() {
+  }
+
+  // adjust JsonPath configuration to simplify JsonPath checking
+  private static final Configuration jpConfig = Configuration.defaultConfiguration()
+    .addOptions(Option.SUPPRESS_EXCEPTIONS).addOptions(Option.ALWAYS_RETURN_LIST);
+
+  /**
+   * Check if given Json has a JsonPath.
+   *
+   * @param json
+   * @param jsonPath
+   *
+   * @return true if has, false otherwise
+   */
+  public static boolean hasJsonPath(String json, String jsonPath) {
+    ReadContext ctx = JsonPath.using(jpConfig).parse(json);
+    List<?> rs = ctx.read(jsonPath);
+    return !rs.isEmpty();
   }
 
   /**
@@ -36,7 +61,7 @@ public class AesUtil {
   }
 
   /**
-   * Mask password
+   * Mask password.
    *
    * @param jsonObject
    */
@@ -47,4 +72,5 @@ public class AesUtil {
       }
     }
   }
+
 }
