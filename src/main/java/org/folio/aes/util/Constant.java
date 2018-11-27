@@ -27,6 +27,10 @@ public class Constant {
   public static final String TENANT_DEFAULT = "no_tenant";
   public static final int BODY_LIMIT = 5000;
 
+  public static final String ROUTING_CRITERIA = "criteria";
+  public static final String ROUTING_TARGET = "target";
+
+
   public static final Configuration PII_JSON_PATH_CONFIG = Configuration
       .defaultConfiguration()
       .addOptions(Option.AS_PATH_LIST, Option.SUPPRESS_EXCEPTIONS);
