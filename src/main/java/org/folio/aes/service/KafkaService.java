@@ -43,8 +43,15 @@ public class KafkaService implements QueueService {
   private Vertx vertx;
   private ConcurrentMap<String, KafkaProducer<String, String>> producers = new ConcurrentHashMap<>();
 
+  // lazy initialize Kafka connection
   public KafkaService(Vertx vertx) {
     this.vertx = vertx;
+  }
+
+  // initialize Kafak connection instantly
+  public KafkaService(Vertx vertx, String kafkaUrl) {
+    this.vertx = vertx;
+    getProducer(kafkaUrl, ar -> {});
   }
 
   public void send(String kafkaUrl, String topic, String msg) {
