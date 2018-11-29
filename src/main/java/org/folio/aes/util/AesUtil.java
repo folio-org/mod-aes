@@ -1,7 +1,8 @@
 package org.folio.aes.util;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
@@ -19,23 +20,24 @@ public class AesUtil {
 
   // adjust JsonPath configuration to simplify JsonPath checking
   private static final Configuration jpConfig = Configuration.defaultConfiguration()
-    .addOptions(Option.SUPPRESS_EXCEPTIONS).addOptions(Option.ALWAYS_RETURN_LIST);
+      .addOptions(Option.SUPPRESS_EXCEPTIONS).addOptions(Option.ALWAYS_RETURN_LIST);
 
   /**
-   * Given a list of JsonPaths, check if given json contains each.
+   * Check JsonPaths.
    *
    * @param json
    * @param jsonPaths
-   * @return
    */
-  public static List<Boolean> hasJsonPath(String json, List<String> jsonPaths) {
+  public static Set<String> checkJsonPaths(String json, Set<String> jsonPaths) {
+    Set<String> goodOnes = new HashSet<>();
     ReadContext ctx = JsonPath.using(jpConfig).parse(json);
-    List<Boolean> rs = new ArrayList<>(jsonPaths.size());
-    for (String jsonPath : jsonPaths) {
+    jsonPaths.forEach(jsonPath -> {
       List<?> list = ctx.read(jsonPath);
-      rs.add(!list.isEmpty());
-    }
-    return rs;
+      if (!list.isEmpty()) {
+        goodOnes.add(jsonPath);
+      }
+    });
+    return goodOnes;
   }
 
   /**

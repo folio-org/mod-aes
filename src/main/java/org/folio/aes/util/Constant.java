@@ -12,7 +12,9 @@ public class Constant {
   public static final String PASSWORD_MASK = "xxx";
 
   public static final String MOD_NAME = "mod-aes";
+  public static final String OKAPI_URL = "x-okapi-url";
   public static final String OKAPI_TENANT = "x-okapi-tenant";
+  public static final String OKAPI_TOKEN = "x-okapi-token";
   public static final String OKAPI_FILTER = "x-okapi-filter";
 
   public static final String PHASE = "PHASE";
@@ -24,5 +26,7 @@ public class Constant {
 
   public static final String ROUTING_CRITERIA = "criteria";
   public static final String ROUTING_TARGET = "target";
+
+  public static final String CONFIG_ROUTING_QUREY = "/configurations/entries?query=(module=AES and configName=routing_rules)&limit=100";
 
 }
