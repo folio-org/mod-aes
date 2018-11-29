@@ -1,7 +1,12 @@
 package org.folio.aes;
 
+import static org.folio.aes.util.Constant.*;
+
 import org.folio.aes.service.AesService;
-import org.folio.aes.util.Constant;
+import org.folio.aes.service.ConfigService;
+import org.folio.aes.service.KafkaQueueService;
+import org.folio.aes.service.LogQueueService;
+import org.folio.aes.service.QueueService;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -22,13 +27,14 @@ public class AesVerticle extends AbstractVerticle {
         System.getProperty("http.port",
           "" + context.config().getInteger("port", 8081))));
 
-    String kafkaUrl = System.getProperty("kafka.url", "");
+    String kafkaUrl = System.getProperty("kafka.url", null);
+    QueueService queueService = kafkaUrl == null ? new LogQueueService() : new KafkaQueueService(vertx, kafkaUrl);
 
-    AesService aesService = new AesService(vertx, kafkaUrl);
+    AesService aesService = new AesService(new ConfigService(vertx), queueService);
 
     Router router = Router.router(vertx);
     // root
-    router.route("/").handler(rc -> rc.response().end(Constant.MOD_NAME + " is up running"));
+    router.route("/").handler(rc -> rc.response().end(MOD_NAME + " is up running"));
     // health checking
     router.route("/admin/health").handler(rc -> rc.response().end("OK"));
     // body mapping

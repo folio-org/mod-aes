@@ -9,7 +9,6 @@ import java.util.Set;
 import org.folio.aes.model.RoutingRule;
 import org.folio.aes.util.AesUtil;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -19,23 +18,12 @@ public class AesService {
 
   private static Logger logger = LoggerFactory.getLogger(AesService.class);
 
-  private Vertx vertx;
-
-  private String kafkaUrl;
-
-  // private KafkaService kafkaService;
-  private DummyQueueService kafkaService = new DummyQueueService();
-
   private ConfigService configService;
+  private QueueService queueService;
 
-  public AesService(Vertx vertx, String kafkaUrl) {
-    this.vertx = vertx;
-    this.kafkaUrl = kafkaUrl;
-    configService = new ConfigService(this.vertx);
-    if (kafkaUrl != null && !kafkaUrl.isEmpty()) {
-      logger.info("Initialize KafkaService");
-      // kafkaService = new KafkaService(this.vertx, kafkaUrl);
-    }
+  public AesService(ConfigService configService, QueueService queueService) {
+    this.configService = configService;
+    this.queueService = queueService;
   }
 
   public void prePostHandler(RoutingContext ctx) {
@@ -44,17 +32,16 @@ public class AesService {
       JsonObject data = collectData(ctx);
       String msg = data.encodePrettily();
       logger.debug(msg);
-      if (kafkaService != null) {
+
+      if (queueService != null) {
         String tenant = ctx.request().headers().get(OKAPI_TENANT);
         String token = ctx.request().headers().get(OKAPI_TOKEN);
         String url = ctx.request().headers().get(OKAPI_URL) + CONFIG_ROUTING_QUREY;
         url = "http://localhost:9130" + CONFIG_ROUTING_QUREY;
-        token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkaWt1X2FkbWluIiwidXNlcl9pZCI6IjgwZDIwMjZkLThjODMtNWMxOC1iYjEzLTlhZDNmNjExMDAzMSIsImlhdCI6MTU0MzQ0NTkzMCwidGVuYW50IjoiZGlrdSJ9.iByzwKA9nUPD40TOJToh8ZzjsgVNn7m1JHM_CpTnFEE";
-
         if (tenant == null) {
-          kafkaService.send(kafkaUrl, TENANT_DEFAULT, msg);
+          queueService.send(TENANT_DEFAULT, msg);
         } else {
-          kafkaService.send(kafkaUrl, tenant, msg);
+          queueService.send(tenant, msg);
           configService.getConfig(tenant, token, url, handler -> {
             if (handler.succeeded()) {
               List<RoutingRule> rules = handler.result();
@@ -64,7 +51,7 @@ public class AesService {
               Set<String> rs = AesUtil.checkJsonPaths(msg, jsonPaths);
               rules.forEach(r -> {
                 if (rs.contains(r.getCriteria())) {
-                  kafkaService.send(kafkaUrl, tenant + "_" + r.getTarget(), msg);
+                  queueService.send(tenant + "_" + r.getTarget(), msg);
                 }
               });
             } else {
@@ -86,7 +73,7 @@ public class AesService {
     data.put("pii", AesUtil.containsPII(bodyString));
     if (bodyString.length() > BODY_LIMIT) {
       data.put("body", new JsonObject().put("content",
-          bodyString.substring(0, BODY_LIMIT) + "..."));
+        bodyString.substring(0, BODY_LIMIT) + "..."));
     } else {
       try {
         JsonObject bodyJsonObject = new JsonObject(bodyString);
