@@ -1,6 +1,6 @@
 package org.folio.aes;
 
-import static org.folio.aes.util.Constant.*;
+import static org.folio.aes.util.AesConstants.*;
 
 import org.folio.aes.service.AesService;
 import org.folio.aes.service.ConfigService;

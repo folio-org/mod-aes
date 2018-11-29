@@ -10,18 +10,18 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.folio.aes.util.AesUtil;
+import org.folio.aes.util.AesUtils;
 import org.junit.Test;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 
-public class AesUtilTest {
+public class AesUtilsTest {
 
   private static final String jsonpathTestContent;
   static {
     try {
-      Path path = Paths.get(AesUtilTest.class.getClassLoader().getResource("jsonpath.json").toURI());
+      Path path = Paths.get(AesUtilsTest.class.getClassLoader().getResource("jsonpath.json").toURI());
       jsonpathTestContent = new String(Files.readAllBytes(path));
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -33,7 +33,7 @@ public class AesUtilTest {
     String goodJsonPath = "$.store.book[?(@.price < 10)]";
     String badJsonPath = "$.store.book[?(@.price > 100)]";
     Set<String> jsonPaths = new HashSet<>(Arrays.asList(goodJsonPath, badJsonPath));
-    Set<String> rs = AesUtil.checkJsonPaths(jsonpathTestContent, jsonPaths);
+    Set<String> rs = AesUtils.checkJsonPaths(jsonpathTestContent, jsonPaths);
     assertTrue(rs.contains(goodJsonPath));
     assertFalse(rs.contains(badJsonPath));
   }
@@ -45,7 +45,7 @@ public class AesUtilTest {
     map.add("a", "2 a");
     map.add("a", "3 a");
     map.add("b", "1 b");
-    JsonObject jo = AesUtil.convertMultiMapToJsonObject(map);
+    JsonObject jo = AesUtils.convertMultiMapToJsonObject(map);
     assertTrue(jo.getJsonArray("a").contains("1 a"));
     assertTrue(jo.getJsonArray("a").contains("2 a"));
     assertTrue(jo.getJsonArray("a").contains("3 a"));
@@ -59,12 +59,12 @@ public class AesUtilTest {
     for (String s : Arrays.asList(login, update)) {
       JsonObject beforeMask = new JsonObject(s);
       JsonObject afterMask = new JsonObject(s);
-      AesUtil.maskPassword(afterMask);
+      AesUtils.maskPassword(afterMask);
       assertEquals(beforeMask.size(), afterMask.size());
       afterMask.forEach(entry -> {
         if (entry.getKey().contains("assword")) {
           assertNotEquals(entry.getValue().toString(), beforeMask.getString(entry.getKey()));
-          assertEquals(Constant.PASSWORD_MASK, entry.getValue().toString());
+          assertEquals(AesConstants.PASSWORD_MASK, entry.getValue().toString());
         } else {
           assertEquals(entry.getValue().toString(), beforeMask.getString(entry.getKey()));
         }
