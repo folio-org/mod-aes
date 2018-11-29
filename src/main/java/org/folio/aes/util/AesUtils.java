@@ -13,9 +13,9 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-public class AesUtil {
+public class AesUtils {
 
-  private AesUtil() {
+  private AesUtils() {
   }
 
   // adjust JsonPath configuration to simplify JsonPath checking
@@ -72,9 +72,9 @@ public class AesUtil {
    * @param jsonObject
    */
   public static void maskPassword(JsonObject jsonObject) {
-    for (String s : Constant.PASSWORDS) {
+    for (String s : AesConstants.PASSWORDS) {
       if (jsonObject.containsKey(s)) {
-        jsonObject.put(s, Constant.PASSWORD_MASK);
+        jsonObject.put(s, AesConstants.PASSWORD_MASK);
       }
     }
   }

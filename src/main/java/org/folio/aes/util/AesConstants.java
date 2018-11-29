@@ -3,9 +3,9 @@ package org.folio.aes.util;
 import java.util.Arrays;
 import java.util.List;
 
-public class Constant {
+public class AesConstants {
 
-  private Constant() {
+  private AesConstants() {
   }
 
   public static List<String> PASSWORDS = Arrays.asList("password", "newPassword");
@@ -22,11 +22,13 @@ public class Constant {
   public static final String PHASE_POST = "post";
 
   public static final String TENANT_DEFAULT = "no_tenant";
-  public static final int BODY_LIMIT = 5000;
+  public static final int BODY_LIMIT = 10000;
 
   public static final String ROUTING_CRITERIA = "criteria";
   public static final String ROUTING_TARGET = "target";
 
   public static final String CONFIG_ROUTING_QUREY = "/configurations/entries?query=(module=AES and configName=routing_rules)&limit=100";
+
+  public static final String AES_FILTER_ID = "x-okapi-aes-filter-id";
 
 }

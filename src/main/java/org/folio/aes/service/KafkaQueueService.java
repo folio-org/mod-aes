@@ -41,30 +41,30 @@ public class KafkaQueueService implements QueueService {
   private static Logger logger = LoggerFactory.getLogger(KafkaQueueService.class);
 
   private Vertx vertx;
-  private String defaultUrl;
+  private String defaultKafkaUrl;
+
+  // keep Kafka producers
   private ConcurrentMap<String, KafkaProducer<String, String>> producers = new ConcurrentHashMap<>();
 
-  // lazy initialize Kafka connection
-  public KafkaQueueService(Vertx vertx) {
-    this.vertx = vertx;
-  }
-
-  // initialize Kafak connection instantly
+  // initialize Kafak connection
   public KafkaQueueService(Vertx vertx, String kafkaUrl) {
     this.vertx = vertx;
-    this.defaultUrl = kafkaUrl;
-    getProducer(kafkaUrl, ar -> {
+    this.defaultKafkaUrl = kafkaUrl;
+    getProducer(this.defaultKafkaUrl, ar -> {
+      if (ar.failed()) {
+        throw new RuntimeException("Failed to init. Kafka.", ar.cause());
+      }
     });
   }
 
   @Override
   public void send(String topic, String msg) {
-    send(defaultUrl, topic, msg);
+    send(defaultKafkaUrl, topic, msg);
   }
 
   @Override
   public void send(String topic, String msg, Future<Void> future) {
-    send(defaultUrl, topic, msg, future);
+    send(defaultKafkaUrl, topic, msg, future);
   }
 
   @Override
@@ -86,11 +86,17 @@ public class KafkaQueueService implements QueueService {
           }
         });
       } else {
+        logger.warn(ar.cause());
         future.fail(ar.cause());
       }
     });
   }
 
+  /**
+   * Clients should call this to release Kafka connections properly.
+   *
+   * @param resultHandler
+   */
   @SuppressWarnings("rawtypes")
   public void stop(Handler<AsyncResult<Void>> resultHandler) {
     logger.info("Stop Kafka producer(s)");
@@ -100,9 +106,9 @@ public class KafkaQueueService implements QueueService {
       futures.add(future);
       v.close(ar -> {
         if (ar.succeeded()) {
-          logger.info(k + " is stopped");
+          logger.info(k + " is stopped.");
         } else {
-          logger.warn(k + " failed to stop");
+          logger.warn(k + " was failed to stop.");
         }
         future.complete();
       });
@@ -139,22 +145,19 @@ public class KafkaQueueService implements QueueService {
     }
   }
 
-  // just for quick testing
+  // quick test
   public static void main(String[] args) {
-
     String kafkaUrl = "";
     // String kafkaUrl = "10.23.33.20:9092"; // dev-dmz instance
     // String kafkaUrl = "10.23.32.4:9092"; // another instance
-
     Vertx vertx = Vertx.vertx();
-    KafkaQueueService kafkaService = new KafkaQueueService(vertx);
-
+    KafkaQueueService kafkaService = new KafkaQueueService(vertx, kafkaUrl);
     @SuppressWarnings("rawtypes")
     List<Future> futures = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
       Future<Void> future = Future.future();
       futures.add(future);
-      kafkaService.send(kafkaUrl, "hji-test", "testing " + i, future);
+      kafkaService.send("hji-test", "testing " + i, future);
     }
     CompositeFuture.join(futures).setHandler(ar -> kafkaService.stop(res -> vertx.close()));
   }

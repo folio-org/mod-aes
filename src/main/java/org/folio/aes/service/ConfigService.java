@@ -1,12 +1,11 @@
 package org.folio.aes.service;
 
-import static org.folio.aes.util.Constant.*;
+import static org.folio.aes.util.AesConstants.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.folio.aes.model.RoutingRule;
-import org.folio.aes.util.Constant;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -31,16 +30,17 @@ public class ConfigService {
     this.vertx = vertx;
   }
 
-  public void getConfig(String tenant, String token, String url, Handler<AsyncResult<List<RoutingRule>>> handler) {
+  public void getConfig(String tenant, String token, String url, String filterId, Handler<AsyncResult<List<RoutingRule>>> handler) {
 
     HttpRequest<Buffer> request = WebClient.create(vertx).getAbs(url);
     MultiMap headers = request.headers();
     headers.set("Accept", "application/json");
+    headers.set(AES_FILTER_ID, filterId);
     if (tenant != null) {
-      headers.set(Constant.OKAPI_TENANT, tenant);
+      headers.set(OKAPI_TENANT, tenant);
     }
     if (token != null) {
-      headers.set(Constant.OKAPI_TOKEN, token);
+      headers.set(OKAPI_TOKEN, token);
     }
 
     request.send(ar -> {
@@ -49,7 +49,7 @@ public class ConfigService {
         if (response.statusCode() == 200) {
           List<RoutingRule> rules = new ArrayList<>();
           response.bodyAsJsonObject().getJsonArray("configs").forEach(item -> {
-            JsonObject jo = (JsonObject) item;
+            JsonObject jo = new JsonObject(((JsonObject) item).getString("value"));
             rules.add(new RoutingRule(jo.getString(ROUTING_CRITERIA), jo.getString(ROUTING_TARGET)));
           });
           handler.handle(Future.succeededFuture(rules));
