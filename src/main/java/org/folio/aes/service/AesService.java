@@ -2,11 +2,12 @@ package org.folio.aes.service;
 
 import static org.folio.aes.util.Constant.*;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.folio.aes.model.RoutingRule;
 import org.folio.aes.util.AesUtil;
-import org.folio.aes.util.Constant;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -22,14 +23,18 @@ public class AesService {
 
   private String kafkaUrl;
 
-  private KafkaService kafkaService;
+  // private KafkaService kafkaService;
+  private DummyQueueService kafkaService = new DummyQueueService();
+
+  private ConfigService configService;
 
   public AesService(Vertx vertx, String kafkaUrl) {
     this.vertx = vertx;
     this.kafkaUrl = kafkaUrl;
+    configService = new ConfigService(this.vertx);
     if (kafkaUrl != null && !kafkaUrl.isEmpty()) {
       logger.info("Initialize KafkaService");
-      kafkaService = new KafkaService(this.vertx, kafkaUrl);
+      // kafkaService = new KafkaService(this.vertx, kafkaUrl);
     }
   }
 
@@ -37,26 +42,35 @@ public class AesService {
     String phase = "" + ctx.request().headers().get(OKAPI_FILTER);
     if (phase.startsWith(PHASE_PRE) || phase.startsWith(PHASE_POST)) {
       JsonObject data = collectData(ctx);
-      logger.debug(data.encodePrettily());
+      String msg = data.encodePrettily();
+      logger.debug(msg);
       if (kafkaService != null) {
-        String topic = ctx.request().headers().get(OKAPI_TENANT);
-        topic = topic == null ? TENANT_DEFAULT : topic;
+        String tenant = ctx.request().headers().get(OKAPI_TENANT);
+        String token = ctx.request().headers().get(OKAPI_TOKEN);
+        String url = ctx.request().headers().get(OKAPI_URL) + CONFIG_ROUTING_QUREY;
+        url = "http://localhost:9130" + CONFIG_ROUTING_QUREY;
+        token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJkaWt1X2FkbWluIiwidXNlcl9pZCI6IjgwZDIwMjZkLThjODMtNWMxOC1iYjEzLTlhZDNmNjExMDAzMSIsImlhdCI6MTU0MzQ0NTkzMCwidGVuYW50IjoiZGlrdSJ9.iByzwKA9nUPD40TOJToh8ZzjsgVNn7m1JHM_CpTnFEE";
 
-        String msg = data.encodePrettily();
-        // always send one copy to default tenant topic
-        kafkaService.send(kafkaUrl, topic, msg);
-        // send to specific topic selectively
-        // TODO: assuming some routing rules from configuration
-        List<JsonObject> list = new ArrayList<>();
-        List<String> jsonPaths = new ArrayList<>();
-        for (JsonObject jo : list) {
-          jsonPaths.add(jo.getString(Constant.ROUTING_CRITERIA));
-        }
-        List<Boolean> rs = AesUtil.hasJsonPath(data.toString(), jsonPaths);
-        for (int i = 0; i < rs.size(); i++) {
-          if (rs.get(i)) {
-            kafkaService.send(kafkaUrl, topic + "_" + list.get(i).getString(Constant.ROUTING_TARGET), msg);
-          }
+        if (tenant == null) {
+          kafkaService.send(kafkaUrl, TENANT_DEFAULT, msg);
+        } else {
+          kafkaService.send(kafkaUrl, tenant, msg);
+          configService.getConfig(tenant, token, url, handler -> {
+            if (handler.succeeded()) {
+              List<RoutingRule> rules = handler.result();
+              System.out.println("Got rules: " + rules);
+              Set<String> jsonPaths = new HashSet<>();
+              rules.forEach(r -> jsonPaths.add(r.getCriteria()));
+              Set<String> rs = AesUtil.checkJsonPaths(msg, jsonPaths);
+              rules.forEach(r -> {
+                if (rs.contains(r.getCriteria())) {
+                  kafkaService.send(kafkaUrl, tenant + "_" + r.getTarget(), msg);
+                }
+              });
+            } else {
+              logger.error(handler.cause());
+            }
+          });
         }
       }
     }
@@ -72,7 +86,7 @@ public class AesService {
     data.put("pii", AesUtil.containsPII(bodyString));
     if (bodyString.length() > BODY_LIMIT) {
       data.put("body", new JsonObject().put("content",
-        bodyString.substring(0, BODY_LIMIT) + "..."));
+          bodyString.substring(0, BODY_LIMIT) + "..."));
     } else {
       try {
         JsonObject bodyJsonObject = new JsonObject(bodyString);
