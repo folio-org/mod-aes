@@ -36,24 +36,38 @@ import io.vertx.kafka.client.producer.KafkaProducerRecord;
  * @author hji
  *
  */
-public class KafkaService implements QueueService {
+public class KafkaQueueService implements QueueService {
 
-  private static Logger logger = LoggerFactory.getLogger(KafkaService.class);
+  private static Logger logger = LoggerFactory.getLogger(KafkaQueueService.class);
 
   private Vertx vertx;
+  private String defaultUrl;
   private ConcurrentMap<String, KafkaProducer<String, String>> producers = new ConcurrentHashMap<>();
 
   // lazy initialize Kafka connection
-  public KafkaService(Vertx vertx) {
+  public KafkaQueueService(Vertx vertx) {
     this.vertx = vertx;
   }
 
   // initialize Kafak connection instantly
-  public KafkaService(Vertx vertx, String kafkaUrl) {
+  public KafkaQueueService(Vertx vertx, String kafkaUrl) {
     this.vertx = vertx;
-    getProducer(kafkaUrl, ar -> {});
+    this.defaultUrl = kafkaUrl;
+    getProducer(kafkaUrl, ar -> {
+    });
   }
 
+  @Override
+  public void send(String topic, String msg) {
+    send(defaultUrl, topic, msg);
+  }
+
+  @Override
+  public void send(String topic, String msg, Future<Void> future) {
+    send(defaultUrl, topic, msg, future);
+  }
+
+  @Override
   public void send(String kafkaUrl, String topic, String msg) {
     send(kafkaUrl, topic, msg, Future.future());
   }
@@ -133,7 +147,7 @@ public class KafkaService implements QueueService {
     // String kafkaUrl = "10.23.32.4:9092"; // another instance
 
     Vertx vertx = Vertx.vertx();
-    KafkaService kafkaService = new KafkaService(vertx);
+    KafkaQueueService kafkaService = new KafkaQueueService(vertx);
 
     @SuppressWarnings("rawtypes")
     List<Future> futures = new ArrayList<>();
