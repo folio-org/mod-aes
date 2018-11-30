@@ -4,6 +4,8 @@ import static org.folio.aes.util.AesConstants.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.folio.aes.model.RoutingRule;
 
@@ -30,7 +32,29 @@ public class ConfigService {
     this.vertx = vertx;
   }
 
-  public void getConfig(String tenant, String token, String url, String filterId, Handler<AsyncResult<List<RoutingRule>>> handler) {
+  private static class CachedRules {
+    public long timestamp = 0L;
+    public List<RoutingRule> rules = new ArrayList<>();
+
+    public CachedRules(long timestamp, List<RoutingRule> rules) {
+      this.timestamp = timestamp;
+      this.rules = rules;
+    }
+  }
+
+  private static final long cachedPeriod = 5 * 60 * 1000; // five minutes
+  private ConcurrentMap<String, CachedRules> cache = new ConcurrentHashMap<>();
+
+  public void getConfig(String tenant, String token, String url, String filterId,
+    Handler<AsyncResult<List<RoutingRule>>> handler) {
+
+    CachedRules cr = cache.get(tenant);
+    if (cr != null && (System.currentTimeMillis() - cr.timestamp < cachedPeriod)) {
+      handler.handle(Future.succeededFuture(cr.rules));
+      return;
+    }
+
+    logger.info("Refresh routing rules for tenant " + tenant);
 
     HttpRequest<Buffer> request = WebClient.create(vertx).getAbs(url);
     MultiMap headers = request.headers();
@@ -52,6 +76,8 @@ public class ConfigService {
             JsonObject jo = new JsonObject(((JsonObject) item).getString("value"));
             rules.add(new RoutingRule(jo.getString(ROUTING_CRITERIA), jo.getString(ROUTING_TARGET)));
           });
+          cache.put(tenant, new CachedRules(System.currentTimeMillis(), rules));
+          logger.debug("Refreshed rules: " + rules);
           handler.handle(Future.succeededFuture(rules));
         } else {
           String errorMsg = response.statusCode() + " " + response.bodyAsString();
