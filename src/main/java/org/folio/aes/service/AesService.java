@@ -51,12 +51,15 @@ public class AesService {
       String token = ctx.request().headers().get(OKAPI_TOKEN);
       String url = ctx.request().headers().get(OKAPI_URL) + CONFIG_ROUTING_QUREY;
       // TODO: temp testing url
-      url = "http://localhost:9130" + CONFIG_ROUTING_QUREY;
+      // url = "http://localhost:9130" + CONFIG_ROUTING_QUREY;
 
       if (tenant == null) {
+        // always send a copy for no-tenant request
         queueService.send(TENANT_DEFAULT, msg);
       } else {
-        queueService.send(tenant, msg);
+        // send a copy to tenant topic all the time?
+        // queueService.send(tenant, msg);
+        // send based on routing configuration
         String filterId = UUID.randomUUID().toString();
         aesFilterIds.put(filterId, System.currentTimeMillis());
         configService.getConfig(tenant, token, url, filterId, handler -> {
