@@ -22,13 +22,16 @@ import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 
-public class ConfigService {
+/**
+ * Retrieve and cache {@link RoutingRule}s.
+ */
+public class RuleConfigService {
 
-  private static Logger logger = LoggerFactory.getLogger(ConfigService.class);
+  private static Logger logger = LoggerFactory.getLogger(RuleConfigService.class);
 
   private Vertx vertx;
 
-  public ConfigService(Vertx vertx) {
+  public RuleConfigService(Vertx vertx) {
     this.vertx = vertx;
   }
 
@@ -42,14 +45,14 @@ public class ConfigService {
     }
   }
 
-  private static final long cachedPeriod = 5 * 60 * 1000; // five minutes
+  private static final long cachePeriod = 1 * 60 * 1000; // one minute
   private ConcurrentMap<String, CachedRules> cache = new ConcurrentHashMap<>();
 
   public void getConfig(String tenant, String token, String url, String filterId,
     Handler<AsyncResult<List<RoutingRule>>> handler) {
 
     CachedRules cr = cache.get(tenant);
-    if (cr != null && (System.currentTimeMillis() - cr.timestamp < cachedPeriod)) {
+    if (cr != null && (System.currentTimeMillis() - cr.timestamp < cachePeriod)) {
       handler.handle(Future.succeededFuture(cr.rules));
       return;
     }
@@ -74,10 +77,11 @@ public class ConfigService {
           List<RoutingRule> rules = new ArrayList<>();
           response.bodyAsJsonObject().getJsonArray("configs").forEach(item -> {
             JsonObject jo = new JsonObject(((JsonObject) item).getString("value"));
-            rules.add(new RoutingRule(jo.getString(ROUTING_CRITERIA), jo.getString(ROUTING_TARGET)));
+            String topic = String.format("TENANT_%s_%s", tenant, jo.getString(ROUTING_TARGET));
+            rules.add(new RoutingRule(jo.getString(ROUTING_CRITERIA), topic));
           });
           cache.put(tenant, new CachedRules(System.currentTimeMillis(), rules));
-          logger.debug("Refreshed rules: " + rules);
+          logger.info("Refreshed rules: " + rules);
           handler.handle(Future.succeededFuture(rules));
         } else {
           String errorMsg = response.statusCode() + " " + response.bodyAsString();

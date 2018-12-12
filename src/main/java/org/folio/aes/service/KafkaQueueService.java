@@ -3,8 +3,10 @@ package org.folio.aes.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 
@@ -19,7 +21,9 @@ import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
 
 /**
- * Test environment in dev EC2
+ * Send message to Kafka queue.
+ *
+ * Notes: Test environment in dev EC2
  *
  * <pre>
  * cd ~/hji/test/kafka-docker/
@@ -58,50 +62,39 @@ public class KafkaQueueService implements QueueService {
   }
 
   @Override
-  public void send(String topic, String msg) {
-    send(defaultKafkaUrl, topic, msg);
+  public CompletableFuture<Boolean> send(String topic, String msg) {
+    return send(this.defaultKafkaUrl, topic, msg);
   }
 
   @Override
-  public void send(String topic, String msg, Future<Void> future) {
-    send(defaultKafkaUrl, topic, msg, future);
-  }
-
-  @Override
-  public void send(String kafkaUrl, String topic, String msg) {
-    send(kafkaUrl, topic, msg, Future.future());
-  }
-
-  @Override
-  public void send(String kafkaUrl, String topic, String msg, Future<Void> future) {
+  public CompletableFuture<Boolean> send(String kafkaUrl, String topic, String msg) {
+    CompletableFuture<Boolean> cf = new CompletableFuture<Boolean>();
     getProducer(kafkaUrl, ar -> {
       if (ar.succeeded()) {
         ar.result().write(KafkaProducerRecord.create(topic, msg), res -> {
           if (res.succeeded()) {
             logger.debug("Send OK: " + msg);
-            future.complete();
+            cf.complete(Boolean.TRUE);
           } else {
             logger.warn("Send not OK: " + msg);
-            future.fail(res.cause());
+            cf.completeExceptionally(res.cause());
           }
         });
       } else {
         logger.warn(ar.cause());
-        future.fail(ar.cause());
+        cf.completeExceptionally(ar.cause());
       }
     });
+    return cf;
   }
 
-  /**
-   * Clients should call this to release Kafka connections properly.
-   *
-   * @param resultHandler
-   */
-  @SuppressWarnings("rawtypes")
-  public void stop(Handler<AsyncResult<Void>> resultHandler) {
-    logger.info("Stop Kafka producer(s)");
+  @Override
+  public CompletableFuture<Void> stop() {
+    CompletableFuture<Void> cf = new CompletableFuture<Void>();
+    @SuppressWarnings("rawtypes")
     List<Future> futures = new ArrayList<>();
     producers.forEach((k, v) -> {
+      @SuppressWarnings("rawtypes")
       Future future = Future.future();
       futures.add(future);
       v.close(ar -> {
@@ -113,7 +106,14 @@ public class KafkaQueueService implements QueueService {
         future.complete();
       });
     });
-    CompositeFuture.join(futures).setHandler(ar -> resultHandler.handle(Future.succeededFuture()));
+    CompositeFuture.join(futures).setHandler(ar -> {
+      if (ar.succeeded()) {
+        cf.complete(null);
+      } else {
+        cf.completeExceptionally(ar.cause());
+      }
+    });
+    return cf;
   }
 
   private KafkaProducer<String, String> createProducer(String kafkaUrl) {
@@ -146,20 +146,17 @@ public class KafkaQueueService implements QueueService {
   }
 
   // quick test
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     String kafkaUrl = "";
-    // String kafkaUrl = "10.23.33.20:9092"; // dev-dmz instance
-    // String kafkaUrl = "10.23.32.4:9092"; // another instance
+    // String kafkaUrl = "10.23.33.20:9092"; // dev instance
     Vertx vertx = Vertx.vertx();
     KafkaQueueService kafkaService = new KafkaQueueService(vertx, kafkaUrl);
     @SuppressWarnings("rawtypes")
-    List<Future> futures = new ArrayList<>();
+    List<CompletableFuture<Boolean>> futures = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      Future<Void> future = Future.future();
-      futures.add(future);
-      kafkaService.send("hji-test", "testing " + i, future);
+      futures.add(kafkaService.send("hji-test", "testing " + i));
     }
-    CompositeFuture.join(futures).setHandler(ar -> kafkaService.stop(res -> vertx.close()));
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
   }
 
 }
