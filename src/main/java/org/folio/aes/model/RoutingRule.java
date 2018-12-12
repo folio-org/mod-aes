@@ -2,8 +2,10 @@ package org.folio.aes.model;
 
 public class RoutingRule {
 
+  private String criteria;
+  private String target;
+
   public RoutingRule(String criteria, String target) {
-    super();
     this.criteria = criteria;
     this.target = target;
   }
@@ -12,9 +14,6 @@ public class RoutingRule {
   public String toString() {
     return "RoutingRule [criteria=" + criteria + ", target=" + target + "]";
   }
-
-  private String criteria;
-  private String target;
 
   public String getCriteria() {
     return criteria;

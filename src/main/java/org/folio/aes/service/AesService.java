@@ -12,7 +12,11 @@ import java.util.concurrent.ConcurrentMap;
 import org.folio.aes.model.RoutingRule;
 import org.folio.aes.util.AesUtils;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -22,66 +26,67 @@ public class AesService {
 
   private static Logger logger = LoggerFactory.getLogger(AesService.class);
 
-  private ConfigService configService;
+  private Vertx vertx;
+  private RuleConfigService ruleConfigService;
   private QueueService queueService;
 
   // prevent circular filter call
   private ConcurrentMap<String, Long> aesFilterIds = new ConcurrentHashMap<>();
 
-  public AesService(ConfigService configService, QueueService queueService) {
-    this.configService = configService;
-    this.queueService = queueService;
+  public AesService(Vertx vertx, String kafkaUrl) {
+    this.vertx = vertx;
+    ruleConfigService = new RuleConfigService(this.vertx);
+    if (kafkaUrl == null) {
+      queueService = new LogQueueService();
+    } else {
+      queueService = new KafkaQueueService(this.vertx, kafkaUrl);
+    }
+  }
+
+  public void stop(Handler<AsyncResult<Void>> resHandler) {
+    queueService.stop();
   }
 
   public void prePostHandler(RoutingContext ctx) {
     MultiMap headers = ctx.request().headers();
+    // skip self-calling
     if (headers.contains(AES_FILTER_ID)) {
-      aesFilterIds.remove(headers.get(AES_FILTER_ID));
       ctx.response().end();
       return;
     }
 
-    String phase = "" + headers.get(OKAPI_FILTER);
-    if (phase.startsWith(PHASE_PRE) || phase.startsWith(PHASE_POST)) {
-      JsonObject data = collectData(ctx);
-      String msg = data.encodePrettily();
-      logger.debug(msg);
+    JsonObject data = collectData(ctx);
+    String msg = data.encodePrettily();
+    logger.trace(msg);
 
-      String tenant = ctx.request().headers().get(OKAPI_TENANT);
-      String token = ctx.request().headers().get(OKAPI_TOKEN);
-      String url = ctx.request().headers().get(OKAPI_URL) + CONFIG_ROUTING_QUREY;
-      // TODO: temp testing url
-      // url = "http://localhost:9130" + CONFIG_ROUTING_QUREY;
+    String tenant = headers.get(OKAPI_TENANT);
+    String token = headers.get(OKAPI_TOKEN);
+    String url = headers.get(OKAPI_URL) + CONFIG_ROUTING_QUREY;
 
-      if (tenant == null) {
-        // always send a copy for no-tenant request
-        queueService.send(TENANT_DEFAULT, msg);
-      } else {
-        // send a copy to tenant topic all the time?
-        // queueService.send(tenant, msg);
-        // send based on routing configuration
-        String filterId = UUID.randomUUID().toString();
-        aesFilterIds.put(filterId, System.currentTimeMillis());
-        configService.getConfig(tenant, token, url, filterId, handler -> {
-          if (handler.succeeded()) {
-            List<RoutingRule> rules = handler.result();
-            System.out.println("Got rules: " + rules);
-            Set<String> jsonPaths = new HashSet<>();
-            rules.forEach(r -> jsonPaths.add(r.getCriteria()));
-            Set<String> validJsonPaths = AesUtils.checkJsonPaths(msg, jsonPaths);
-            rules.forEach(r -> {
-              if (validJsonPaths.contains(r.getCriteria())) {
-                queueService.send(tenant + "_" + r.getTarget(), msg);
-              }
-            });
-          } else {
-            logger.error(handler.cause());
-          }
-          aesFilterIds.remove(filterId);
-        });
-      }
+    Future<Void> future = Future.future();
+    if (tenant == null) {
+      // always send a copy for no-tenant request
+      queueService.send(TENANT_NONE, msg);
+    } else {
+      String filterId = UUID.randomUUID().toString();
+      aesFilterIds.put(filterId, System.currentTimeMillis());
+      ruleConfigService.getConfig(tenant, token, url, filterId, handler -> {
+        if (handler.succeeded()) {
+          List<RoutingRule> rules = handler.result();
+          Set<String> jsonPaths = new HashSet<>();
+          rules.forEach(r -> jsonPaths.add(r.getCriteria()));
+          Set<String> validJsonPaths = AesUtils.checkJsonPaths(msg, jsonPaths);
+          rules.forEach(r -> {
+            if (validJsonPaths.contains(r.getCriteria())) {
+              queueService.send(r.getTarget(), msg);
+            }
+          });
+        } else {
+          logger.error(handler.cause());
+        }
+        aesFilterIds.remove(filterId);
+      });
     }
-
     ctx.response().end();
   }
 

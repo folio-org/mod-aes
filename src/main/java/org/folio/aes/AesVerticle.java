@@ -2,11 +2,9 @@ package org.folio.aes;
 
 import static org.folio.aes.util.AesConstants.*;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.folio.aes.service.AesService;
-import org.folio.aes.service.ConfigService;
-import org.folio.aes.service.KafkaQueueService;
-import org.folio.aes.service.LogQueueService;
-import org.folio.aes.service.QueueService;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -19,6 +17,8 @@ public class AesVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(AesVerticle.class);
 
+  private AesService aesService = null;
+
   @Override
   public void start(Future<Void> fut) throws Exception {
 
@@ -28,11 +28,23 @@ public class AesVerticle extends AbstractVerticle {
           "" + context.config().getInteger("port", 8081))));
 
     String kafkaUrl = System.getProperty("kafka.url", null);
-    QueueService queueService = kafkaUrl == null ? new LogQueueService() : new KafkaQueueService(vertx, kafkaUrl);
 
-    AesService aesService = new AesService(new ConfigService(vertx), queueService);
+    aesService = new AesService(vertx, kafkaUrl);
 
     Router router = Router.router(vertx);
+    router.route("/test").handler(rc -> {
+      CompletableFuture.runAsync(() -> {
+        try {
+          Thread.sleep(3000);
+        } catch (InterruptedException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+        System.out.println("waking up ");
+      });
+      rc.response().end(MOD_NAME + " is up running");
+    });
+
     // root
     router.route("/").handler(rc -> rc.response().end(MOD_NAME + " is up running"));
     // health checking
@@ -51,6 +63,15 @@ public class AesVerticle extends AbstractVerticle {
     });
 
     logger.info("HTTP server started on port " + port);
+  }
+
+  @Override
+  public void stop(Future<Void> fut) {
+    if (aesService != null) {
+      aesService.stop(rs -> fut.completer());
+    } else {
+      fut.complete();
+    }
   }
 
 }
