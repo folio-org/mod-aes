@@ -32,19 +32,6 @@ public class AesVerticle extends AbstractVerticle {
     aesService = new AesService(vertx, kafkaUrl);
 
     Router router = Router.router(vertx);
-    router.route("/test").handler(rc -> {
-      CompletableFuture.runAsync(() -> {
-        try {
-          Thread.sleep(3000);
-        } catch (InterruptedException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-        System.out.println("waking up ");
-      });
-      rc.response().end(MOD_NAME + " is up running");
-    });
-
     // root
     router.route("/").handler(rc -> rc.response().end(MOD_NAME + " is up running"));
     // health checking

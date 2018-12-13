@@ -83,35 +83,25 @@ public class KafkaQueueService implements QueueService {
       }
       return res;
     });
+
     return cf;
   }
 
   @Override
   public CompletableFuture<Void> stop() {
-    CompletableFuture<Void> cf = new CompletableFuture<Void>();
-    @SuppressWarnings("rawtypes")
-    List<Future> futures = new ArrayList<>();
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
     producers.forEach((k, v) -> {
-      @SuppressWarnings("rawtypes")
-      Future future = Future.future();
-      futures.add(future);
-      v.close(ar -> {
-        if (ar.succeeded()) {
-          logger.info(k + " is stopped.");
-        } else {
-          logger.warn(k + " was failed to stop.");
-        }
-        future.complete();
-      });
+      futures.add(CompletableFuture.runAsync(() -> {
+        v.close(ar -> {
+          if (ar.succeeded()) {
+            logger.info(k + " is stopped.");
+          } else {
+            logger.warn(k + " was failed to stop.");
+          }
+        });
+      }));
     });
-    CompositeFuture.join(futures).setHandler(ar -> {
-      if (ar.succeeded()) {
-        cf.complete(null);
-      } else {
-        cf.completeExceptionally(ar.cause());
-      }
-    });
-    return cf;
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
   }
 
 //  private void getProducer(String kafkaUrl, Handler<AsyncResult<KafkaProducer<String, String>>> resultHandler) {
@@ -142,9 +132,7 @@ public class KafkaQueueService implements QueueService {
       logger.debug("Return an existing producer " + System.identityHashCode(producer));
       cf.complete(producer);
     } else {
-      CompletableFuture<KafkaProducer<String, String>> f = CompletableFuture
-          .supplyAsync(() -> createProducer(kafkaUrl));
-      f.thenAccept(newProducer -> {
+      CompletableFuture.supplyAsync(() -> createProducer(kafkaUrl)).thenAccept(newProducer -> {
         KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
         // just in case that a duplicate is created due to competition
         if (p != null) {

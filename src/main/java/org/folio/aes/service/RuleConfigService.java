@@ -4,6 +4,7 @@ import static org.folio.aes.util.AesConstants.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -48,8 +49,63 @@ public class RuleConfigService {
   private static final long cachePeriod = 1 * 60 * 1000; // one minute
   private ConcurrentMap<String, CachedRules> cache = new ConcurrentHashMap<>();
 
+  public CompletableFuture<List<RoutingRule>> getConfig(String tenant, String token, String url, String filterId) {
+    CompletableFuture<List<RoutingRule>> cf = new CompletableFuture<>();
+    CachedRules cr = cache.get(tenant);
+    if (cr != null && (System.currentTimeMillis() - cr.timestamp < cachePeriod)) {
+      cf.complete(cr.rules);
+    } else {
+      logger.info("Refresh routing rules for tenant " + tenant);
+//      CompletableFuture.supplyAsync(() -> refreshConfig(tenant, token, url, filterId)).thenAccept(rules -> {
+//        cache.put(tenant, new CachedRules(System.currentTimeMillis(), rules));
+//        cf.complete(rules);
+//        logger.info("Refreshed rules: " + rules);
+//      });
+
+    }
+    return cf;
+  }
+
+  private void refreshConfig(String tenant, String token, String url, String filterId) {
+    logger.info("Refresh routing rules for tenant " + tenant);
+
+    HttpRequest<Buffer> request = WebClient.create(vertx).getAbs(url);
+    MultiMap headers = request.headers();
+    headers.set("Accept", "application/json");
+    headers.set(AES_FILTER_ID, filterId);
+    if (tenant != null) {
+      headers.set(OKAPI_TENANT, tenant);
+    }
+    if (token != null) {
+      headers.set(OKAPI_TOKEN, token);
+    }
+
+    request.send(ar -> {
+      if (ar.succeeded()) {
+        HttpResponse<Buffer> response = ar.result();
+        if (response.statusCode() == 200) {
+          List<RoutingRule> rules = new ArrayList<>();
+          response.bodyAsJsonObject().getJsonArray("configs").forEach(item -> {
+            JsonObject jo = new JsonObject(((JsonObject) item).getString("value"));
+            String topic = String.format("TENANT_%s_%s", tenant, jo.getString(ROUTING_TARGET));
+            rules.add(new RoutingRule(jo.getString(ROUTING_CRITERIA), topic));
+          });
+//          return rules;
+        } else {
+          String errorMsg = response.statusCode() + " " + response.bodyAsString();
+          logger.warn(errorMsg);
+          throw new RuntimeException(errorMsg);
+        }
+      } else {
+        logger.warn(ar.cause());
+        throw new RuntimeException(ar.cause());
+      }
+    });
+
+  }
+
   public void getConfig(String tenant, String token, String url, String filterId,
-    Handler<AsyncResult<List<RoutingRule>>> handler) {
+      Handler<AsyncResult<List<RoutingRule>>> handler) {
 
     CachedRules cr = cache.get(tenant);
     if (cr != null && (System.currentTimeMillis() - cr.timestamp < cachePeriod)) {
