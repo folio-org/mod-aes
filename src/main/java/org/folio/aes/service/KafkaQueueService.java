@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 
@@ -50,40 +51,37 @@ public class KafkaQueueService implements QueueService {
   // keep Kafka producers
   private ConcurrentMap<String, KafkaProducer<String, String>> producers = new ConcurrentHashMap<>();
 
-  // initialize Kafak connection
   public KafkaQueueService(Vertx vertx, String kafkaUrl) {
     this.vertx = vertx;
     this.defaultKafkaUrl = kafkaUrl;
-    getProducer(this.defaultKafkaUrl, ar -> {
-      if (ar.failed()) {
-        throw new RuntimeException("Failed to init. Kafka.", ar.cause());
-      }
-    });
+    producers.put(kafkaUrl, createProducer(kafkaUrl));
   }
 
   @Override
-  public CompletableFuture<Boolean> send(String topic, String msg) {
-    return send(this.defaultKafkaUrl, topic, msg);
+  public CompletableFuture<Void> send(String topic, String msg) {
+    return send(defaultKafkaUrl, topic, msg);
   }
 
   @Override
-  public CompletableFuture<Boolean> send(String kafkaUrl, String topic, String msg) {
-    CompletableFuture<Boolean> cf = new CompletableFuture<Boolean>();
-    getProducer(kafkaUrl, ar -> {
-      if (ar.succeeded()) {
-        ar.result().write(KafkaProducerRecord.create(topic, msg), res -> {
-          if (res.succeeded()) {
-            logger.debug("Send OK: " + msg);
-            cf.complete(Boolean.TRUE);
-          } else {
-            logger.warn("Send not OK: " + msg);
-            cf.completeExceptionally(res.cause());
-          }
-        });
-      } else {
-        logger.warn(ar.cause());
-        cf.completeExceptionally(ar.cause());
+  public CompletableFuture<Void> send(String kafkaUrl, String topic, String msg) {
+    CompletableFuture<Void> cf = new CompletableFuture<Void>();
+
+    getOrCreateProducer(kafkaUrl).thenCompose(p -> CompletableFuture.runAsync(() -> {
+      p.write(KafkaProducerRecord.create(topic, msg), res -> {
+        if (res.succeeded()) {
+          logger.debug("Send OK: " + msg);
+          cf.complete(null);
+        } else {
+          logger.warn("Send not OK: " + msg);
+          cf.completeExceptionally(res.cause());
+        }
+      });
+    })).handle((res, ex) -> {
+      if (ex != null) {
+        logger.warn(ex);
+        cf.completeExceptionally(ex);
       }
+      return res;
     });
     return cf;
   }
@@ -116,6 +114,51 @@ public class KafkaQueueService implements QueueService {
     return cf;
   }
 
+//  private void getProducer(String kafkaUrl, Handler<AsyncResult<KafkaProducer<String, String>>> resultHandler) {
+//    logger.debug("Get Kafka producer for " + kafkaUrl);
+//    KafkaProducer<String, String> producer = producers.get(kafkaUrl);
+//    if (producer != null) {
+//      logger.debug("Return an existing producer " + System.identityHashCode(producer));
+//      resultHandler.handle(Future.succeededFuture(producer));
+//    } else {
+//      KafkaProducer<String, String> newProducer = createProducer(kafkaUrl);
+//      KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
+//      // just in case that a duplicate is created due to competition
+//      if (p != null) {
+//        logger.warn("Close a producer duplicate");
+//        newProducer.close();
+//        resultHandler.handle(Future.succeededFuture(p));
+//      } else {
+//        resultHandler.handle(Future.succeededFuture(newProducer));
+//      }
+//    }
+//  }
+
+  private CompletableFuture<KafkaProducer<String, String>> getOrCreateProducer(String kafkaUrl) {
+    logger.debug("Get Kafka producer for " + kafkaUrl);
+    CompletableFuture<KafkaProducer<String, String>> cf = new CompletableFuture<>();
+    KafkaProducer<String, String> producer = producers.get(kafkaUrl);
+    if (producer != null) {
+      logger.debug("Return an existing producer " + System.identityHashCode(producer));
+      cf.complete(producer);
+    } else {
+      CompletableFuture<KafkaProducer<String, String>> f = CompletableFuture
+          .supplyAsync(() -> createProducer(kafkaUrl));
+      f.thenAccept(newProducer -> {
+        KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
+        // just in case that a duplicate is created due to competition
+        if (p != null) {
+          logger.warn("Close a producer duplicate " + System.identityHashCode(newProducer));
+          newProducer.close();
+          cf.complete(p);
+        } else {
+          cf.complete(newProducer);
+        }
+      });
+    }
+    return cf;
+  }
+
   private KafkaProducer<String, String> createProducer(String kafkaUrl) {
     logger.info("Create Kafka producer for " + kafkaUrl);
     Properties config = new Properties();
@@ -125,26 +168,6 @@ public class KafkaQueueService implements QueueService {
     return producer;
   }
 
-  private void getProducer(String kafkaUrl, Handler<AsyncResult<KafkaProducer<String, String>>> resultHandler) {
-    logger.debug("Get Kafka producer for " + kafkaUrl);
-    KafkaProducer<String, String> producer = producers.get(kafkaUrl);
-    if (producer != null) {
-      logger.debug("Return an existing producer " + System.identityHashCode(producer));
-      resultHandler.handle(Future.succeededFuture(producer));
-    } else {
-      KafkaProducer<String, String> newProducer = createProducer(kafkaUrl);
-      KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
-      // just in case that a duplicate is created due to competition
-      if (p != null) {
-        logger.warn("Close a producer duplicate");
-        newProducer.close();
-        resultHandler.handle(Future.succeededFuture(p));
-      } else {
-        resultHandler.handle(Future.succeededFuture(newProducer));
-      }
-    }
-  }
-
   // quick test
   public static void main(String[] args) throws Exception {
     String kafkaUrl = "";
@@ -152,7 +175,7 @@ public class KafkaQueueService implements QueueService {
     Vertx vertx = Vertx.vertx();
     KafkaQueueService kafkaService = new KafkaQueueService(vertx, kafkaUrl);
     @SuppressWarnings("rawtypes")
-    List<CompletableFuture<Boolean>> futures = new ArrayList<>();
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
       futures.add(kafkaService.send("hji-test", "testing " + i));
     }

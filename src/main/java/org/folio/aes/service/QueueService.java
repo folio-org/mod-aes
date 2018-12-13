@@ -15,7 +15,7 @@ public interface QueueService {
    * @param msg
    * @return
    */
-  CompletableFuture<Boolean> send(String topic, String msg);
+  CompletableFuture<Void> send(String topic, String msg);
 
   /**
    * Send message to topic for given queue.
@@ -25,7 +25,7 @@ public interface QueueService {
    * @param queueUrl
    * @return
    */
-  CompletableFuture<Boolean> send(String topic, String msg, String queueUrl);
+  CompletableFuture<Void> send(String topic, String msg, String queueUrl);
 
   /**
    * Stop the queue service and clean up resources.
