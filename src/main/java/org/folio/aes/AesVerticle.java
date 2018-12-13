@@ -2,8 +2,6 @@ package org.folio.aes;
 
 import static org.folio.aes.util.AesConstants.*;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.folio.aes.service.AesService;
 
 import io.vertx.core.AbstractVerticle;
@@ -55,7 +53,17 @@ public class AesVerticle extends AbstractVerticle {
   @Override
   public void stop(Future<Void> fut) {
     if (aesService != null) {
-      aesService.stop(rs -> fut.completer());
+      aesService.stop()
+        .thenRun(() -> fut.complete())
+        .handle((res, ex) -> {
+          if (ex != null) {
+            logger.warn(ex);
+            fut.fail(ex);
+            return ex;
+          }
+          fut.complete();
+          return res;
+        });
     } else {
       fut.complete();
     }

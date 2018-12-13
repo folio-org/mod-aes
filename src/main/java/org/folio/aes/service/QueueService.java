@@ -2,10 +2,6 @@ package org.folio.aes.service;
 
 import java.util.concurrent.CompletableFuture;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-
 public interface QueueService {
 
   /**
@@ -34,26 +30,4 @@ public interface QueueService {
    */
   CompletableFuture<Void> stop();
 
-  // /**
-  // * Send message to topic in default queue.
-  // *
-  // * @param topic
-  // * @param msg
-  // */
-  // void send(String topic, String msg, Future<Void> future);
-  //
-  // /**
-  // * Send message to topic of given queue.
-  // *
-  // * @param topic
-  // * @param msg
-  // */
-  // void send(String queueUrl, String topic, String msg, Future<Void> future);
-  //
-  // /**
-  // * Stop the queue service.
-  // *
-  // * @param resHandler
-  // */
-  // public void stop(Handler<AsyncResult<Void>> resHandler);
 }

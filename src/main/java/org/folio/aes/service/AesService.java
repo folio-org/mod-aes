@@ -3,18 +3,11 @@ package org.folio.aes.service;
 import static org.folio.aes.util.AesConstants.*;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CompletableFuture;
 
-import org.folio.aes.model.RoutingRule;
 import org.folio.aes.util.AesUtils;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -26,30 +19,25 @@ public class AesService {
 
   private static Logger logger = LoggerFactory.getLogger(AesService.class);
 
-  private Vertx vertx;
-  private RuleConfigService ruleConfigService;
+  private RuleService ruleService;
   private QueueService queueService;
 
-  // prevent circular filter call
-  private ConcurrentMap<String, Long> aesFilterIds = new ConcurrentHashMap<>();
-
   public AesService(Vertx vertx, String kafkaUrl) {
-    this.vertx = vertx;
-    ruleConfigService = new RuleConfigService(this.vertx);
+    ruleService = new RuleServiceConfigImpl(vertx);
     if (kafkaUrl == null) {
-      queueService = new LogQueueService();
+      queueService = new QueueServiceLogImpl();
     } else {
-      queueService = new KafkaQueueService(this.vertx, kafkaUrl);
+      queueService = new QueueServiceKafkaImpl(vertx, kafkaUrl);
     }
   }
 
-  public void stop(Handler<AsyncResult<Void>> resHandler) {
-    queueService.stop();
+  public CompletableFuture<Void> stop() {
+    return queueService.stop();
   }
 
   public void prePostHandler(RoutingContext ctx) {
     MultiMap headers = ctx.request().headers();
-    // skip self-calling
+    // TODO: need a better way to skip self-calling
     if (headers.contains(AES_FILTER_ID)) {
       ctx.response().end();
       return;
@@ -59,43 +47,60 @@ public class AesService {
     String msg = data.encodePrettily();
     logger.trace(msg);
 
+    String okapiUrl = headers.get(OKAPI_URL) + CONFIG_ROUTING_QUREY;
     String tenant = headers.get(OKAPI_TENANT);
     String token = headers.get(OKAPI_TOKEN);
-    String url = headers.get(OKAPI_URL) + CONFIG_ROUTING_QUREY;
 
-    Future<Void> future = Future.future();
-    if (tenant == null) {
-      // always send a copy for no-tenant request
-      queueService.send(TENANT_NONE, msg);
-    } else {
-      String filterId = UUID.randomUUID().toString();
-      aesFilterIds.put(filterId, System.currentTimeMillis());
-      ruleConfigService.getConfig(tenant, token, url, filterId, handler -> {
-        if (handler.succeeded()) {
-          List<RoutingRule> rules = handler.result();
-          Set<String> jsonPaths = new HashSet<>();
-          rules.forEach(r -> jsonPaths.add(r.getCriteria()));
-          Set<String> validJsonPaths = AesUtils.checkJsonPaths(msg, jsonPaths);
-          rules.forEach(r -> {
-            if (validJsonPaths.contains(r.getCriteria())) {
-              queueService.send(r.getTarget(), msg);
+    // caller does not care, so run it async for efficiency
+    CompletableFuture cf = CompletableFuture.runAsync(() -> {
+      if (tenant == null) {
+        // edge case: always send a copy for no-tenant request
+        queueService.send(TENANT_NONE, msg);
+      } else {
+        ruleService.getRules(okapiUrl, tenant, token)
+          .thenAccept(rules -> {
+            Set<String> jsonPaths = new HashSet<>();
+            rules.forEach(r -> jsonPaths.add(r.getCriteria()));
+            Set<String> validJsonPaths = AesUtils.checkJsonPaths(msg, jsonPaths);
+            rules.forEach(r -> {
+              if (validJsonPaths.contains(r.getCriteria())) {
+                queueService.send(r.getTarget(), msg);
+              }
+            });
+          }).handle((res, ex) -> {
+            if (ex != null) {
+              logger.warn(ex);
+              ex.printStackTrace();
+              if (token != null) {
+                System.out.println(AesUtils.decodeOkapiToken(token).encodePrettily());
+              }
+              System.out.println(msg);
+              return ex;
+            } else {
+              return res;
             }
           });
-        } else {
-          logger.error(handler.cause());
-        }
-        aesFilterIds.remove(filterId);
-      });
+      }
+    });
+
+    try {
+      cf.get();
+    } catch (Exception e) {
+      System.out.println("From catched exception");
+      e.printStackTrace();
     }
     ctx.response().end();
   }
 
   private JsonObject collectData(RoutingContext ctx) {
     JsonObject data = new JsonObject();
-    data.put("path", ctx.normalisedPath());
-    data.put("headers", AesUtils.convertMultiMapToJsonObject(ctx.request().headers()));
-    data.put("params", AesUtils.convertMultiMapToJsonObject(ctx.request().params()));
+    data.put(MSG_PATH, ctx.normalisedPath());
+    data.put(MSG_HEADERS, AesUtils.convertMultiMapToJsonObject(ctx.request().headers()));
+    data.put(MSG_PARAMS, AesUtils.convertMultiMapToJsonObject(ctx.request().params()));
     String bodyString = ctx.getBodyAsString();
+    if (bodyString.length() > MSG_BODY_LIMIT) {
+      data.put(MSG_BODY, new JsonObject().put(MSG_BODY_CONTENT,
+        bodyString.substring(0, MSG_BODY_LIMIT) + "..."));
     data.put("pii", AesUtil.containsPII(bodyString));
     if (bodyString.length() > BODY_LIMIT) {
       data.put("body", new JsonObject().put("content",
@@ -104,9 +109,9 @@ public class AesService {
       try {
         JsonObject bodyJsonObject = new JsonObject(bodyString);
         AesUtils.maskPassword(bodyJsonObject);
-        data.put("body", bodyJsonObject);
+        data.put(MSG_BODY, bodyJsonObject);
       } catch (Exception e) {
-        data.put("body", new JsonObject().put("content", bodyString));
+        data.put(MSG_BODY, new JsonObject().put(MSG_BODY_CONTENT, bodyString));
       }
     }
     return data;

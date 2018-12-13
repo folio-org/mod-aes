@@ -92,4 +92,25 @@ public class AesUtilsTest {
 
     assertTrue(AesUtil.containsPII(users));
   }
+  @Test
+  public void testDecodeOkapiToken() {
+    String token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkaWt1X3VzZXIiLCJ1c2VyX2lkIjoiYWJjIiwidGVuYW50IjoiZGlrdSJ9.eMu6_Gjjo6G6TeTS3y--GmQGTtWryJtKznpGUUwpa0rDDwY1xLBDTQoHv06_mXYs2GyPOoeERUM_G_BEvpMZcA";
+    JsonObject jo = AesUtils.decodeOkapiToken(token);
+    assertEquals("diku_user", jo.getValue("sub"));
+    assertEquals("abc", jo.getValue("user_id"));
+    assertEquals("diku", jo.getValue("tenant"));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testDecodeOkapiTokenInvalidTokenFomrat() {
+    String token = "abc";
+    AesUtils.decodeOkapiToken(token);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testDecodeOkapiTokenInvalidJson() {
+    String token = "abc.def";
+    AesUtils.decodeOkapiToken(token);
+  }
+
 }
