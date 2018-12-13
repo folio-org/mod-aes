@@ -35,16 +35,16 @@ public class LogQueueService implements QueueService {
   // }
 
   @Override
-  public CompletableFuture<Boolean> send(String topic, String msg) {
-    CompletableFuture<Boolean> cf = new CompletableFuture<Boolean>();
+  public CompletableFuture<Void> send(String topic, String msg) {
+    CompletableFuture<Void> cf = new CompletableFuture<Void>();
     logger.debug("topic: " + topic);
     logger.debug("msg: " + msg);
-    cf.complete(Boolean.TRUE);
+    cf.complete(null);
     return cf;
   }
 
   @Override
-  public CompletableFuture<Boolean> send(String topic, String msg, String queueUrl) {
+  public CompletableFuture<Void> send(String topic, String msg, String queueUrl) {
     return send(topic, msg);
   }
 
