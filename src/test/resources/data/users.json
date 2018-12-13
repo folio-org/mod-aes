@@ -1,0 +1,338 @@
+{
+  "users" : [ {
+    "username" : "edison",
+    "id" : "6f57917f-e331-4f37-9fcc-1ba8856f6dcf",
+    "barcode" : "318101657756876",
+    "active" : true,
+    "type" : "patron",
+    "patronGroup" : "25e9c1e9-0db6-40d3-9b4d-99e7ae15696a",
+    "proxyFor" : [ ],
+    "personal" : {
+      "lastName" : "Runolfsdottir",
+      "firstName" : "Sister",
+      "middleName" : "Tate",
+      "email" : "skye@frami-inc.ni",
+      "phone" : "117.985.8667 x454",
+      "mobilePhone" : "862-156-2647 x7161",
+      "dateOfBirth" : "1978-02-13T00:00:00.000+0000",
+      "addresses" : [ {
+        "countryId" : "US",
+        "addressLine1" : "52932 Christiansen Spurs Suite 551",
+        "city" : "Troy",
+        "region" : "NE",
+        "postalCode" : "28321",
+        "addressTypeId" : "21c019cf-9d0b-4996-9d43-e2ef6a0f02be",
+        "primaryAddress" : true
+      } ],
+      "preferredContactTypeId" : "004"
+    },
+    "enrollmentDate" : "2018-03-28T00:00:00.000+0000",
+    "expirationDate" : "2019-02-12T00:00:00.000+0000",
+    "createdDate" : "2018-12-12T02:03:12.408+0000",
+    "updatedDate" : "2018-12-12T02:03:12.408+0000",
+    "metadata" : {
+      "createdDate" : "2018-12-12T02:03:12.403+0000",
+      "createdByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929",
+      "updatedDate" : "2018-12-12T02:03:12.403+0000",
+      "updatedByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929"
+    }
+  }, {
+    "username" : "shaun",
+    "id" : "5062c310-a3bf-4b55-af84-4466775e61ed",
+    "barcode" : "701903521611850",
+    "active" : true,
+    "type" : "patron",
+    "patronGroup" : "25e9c1e9-0db6-40d3-9b4d-99e7ae15696a",
+    "proxyFor" : [ ],
+    "personal" : {
+      "lastName" : "Schimmel",
+      "firstName" : "Keyon",
+      "email" : "caterina@mayer-weber.coop",
+      "phone" : "274-358-5634",
+      "dateOfBirth" : "1989-05-31T00:00:00.000+0000",
+      "addresses" : [ {
+        "countryId" : "US",
+        "addressLine1" : "52329 Kamron Village",
+        "city" : "Monterey Park",
+        "region" : "DC",
+        "postalCode" : "65538",
+        "addressTypeId" : "21c019cf-9d0b-4996-9d43-e2ef6a0f02be",
+        "primaryAddress" : true
+      } ],
+      "preferredContactTypeId" : "005"
+    },
+    "enrollmentDate" : "2017-02-28T00:00:00.000+0000",
+    "expirationDate" : "2020-03-03T00:00:00.000+0000",
+    "createdDate" : "2018-12-12T02:03:20.710+0000",
+    "updatedDate" : "2018-12-12T02:03:20.710+0000",
+    "metadata" : {
+      "createdDate" : "2018-12-12T02:03:20.704+0000",
+      "createdByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929",
+      "updatedDate" : "2018-12-12T02:03:20.704+0000",
+      "updatedByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929"
+    }
+  }, {
+    "username" : "nestor",
+    "id" : "683c354e-de8c-472b-8cb1-b9b52a1606e2",
+    "barcode" : "746039749447636",
+    "active" : true,
+    "type" : "patron",
+    "patronGroup" : "25e9c1e9-0db6-40d3-9b4d-99e7ae15696a",
+    "proxyFor" : [ ],
+    "personal" : {
+      "lastName" : "Schmitt",
+      "firstName" : "Pierre",
+      "middleName" : "Kiera",
+      "email" : "heloise@kub-gutkowski.dm",
+      "phone" : "1-357-793-7561 x187",
+      "dateOfBirth" : "1949-07-22T00:00:00.000+0000",
+      "addresses" : [ {
+        "countryId" : "US",
+        "addressLine1" : "48691 Leann Way",
+        "city" : "Los Angeles",
+        "region" : "AA",
+        "postalCode" : "71435-6736",
+        "addressTypeId" : "21c019cf-9d0b-4996-9d43-e2ef6a0f02be",
+        "primaryAddress" : true
+      } ],
+      "preferredContactTypeId" : "004"
+    },
+    "enrollmentDate" : "2016-08-11T00:00:00.000+0000",
+    "expirationDate" : "2020-06-08T00:00:00.000+0000",
+    "createdDate" : "2018-12-12T02:03:43.140+0000",
+    "updatedDate" : "2018-12-12T02:03:43.140+0000",
+    "metadata" : {
+      "createdDate" : "2018-12-12T02:03:43.135+0000",
+      "createdByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929",
+      "updatedDate" : "2018-12-12T02:03:43.135+0000",
+      "updatedByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929"
+    }
+  }, {
+    "username" : "tressa",
+    "id" : "8edf038a-7cdb-426d-985f-8fa79ee51702",
+    "barcode" : "353249882247983",
+    "active" : true,
+    "type" : "patron",
+    "patronGroup" : "25e9c1e9-0db6-40d3-9b4d-99e7ae15696a",
+    "proxyFor" : [ ],
+    "personal" : {
+      "lastName" : "Schuster",
+      "firstName" : "Rick",
+      "middleName" : "Kathlyn",
+      "email" : "orrin@legros-goyette-and-simonis.pt",
+      "phone" : "(003)146-7343 x551",
+      "mobilePhone" : "675-114-3974 x91134",
+      "dateOfBirth" : "2002-07-12T00:00:00.000+0000",
+      "addresses" : [ {
+        "countryId" : "US",
+        "addressLine1" : "38061 Corkery Courts",
+        "city" : "Springfield",
+        "region" : "AZ",
+        "postalCode" : "77298",
+        "addressTypeId" : "21c019cf-9d0b-4996-9d43-e2ef6a0f02be",
+        "primaryAddress" : true
+      } ],
+      "preferredContactTypeId" : "005"
+    },
+    "enrollmentDate" : "2016-08-26T00:00:00.000+0000",
+    "expirationDate" : "2019-11-29T00:00:00.000+0000",
+    "createdDate" : "2018-12-12T02:03:20.081+0000",
+    "updatedDate" : "2018-12-12T02:03:20.081+0000",
+    "metadata" : {
+      "createdDate" : "2018-12-12T02:03:20.076+0000",
+      "createdByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929",
+      "updatedDate" : "2018-12-12T02:03:20.076+0000",
+      "updatedByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929"
+    }
+  }, {
+    "username" : "fay",
+    "id" : "54338018-6d4d-4d3a-b81d-7ae386e699aa",
+    "barcode" : "614772144448537",
+    "active" : true,
+    "type" : "patron",
+    "patronGroup" : "25e9c1e9-0db6-40d3-9b4d-99e7ae15696a",
+    "proxyFor" : [ ],
+    "personal" : {
+      "lastName" : "Skiles",
+      "firstName" : "Arch",
+      "middleName" : "Gayle",
+      "email" : "jamey@kessler-jacobson-and-lynch.mr",
+      "phone" : "645.254.2510",
+      "mobilePhone" : "(676)001-4011 x2462",
+      "dateOfBirth" : "1961-02-13T00:00:00.000+0000",
+      "addresses" : [ {
+        "countryId" : "US",
+        "addressLine1" : "44895 Rear",
+        "city" : "Tempe",
+        "region" : "MI",
+        "postalCode" : "23724-3718",
+        "addressTypeId" : "ccbdb04b-2ce4-41b1-9cfe-00ff8cf98e4f",
+        "primaryAddress" : true
+      } ],
+      "preferredContactTypeId" : "003"
+    },
+    "enrollmentDate" : "2018-06-23T00:00:00.000+0000",
+    "expirationDate" : "2020-05-20T00:00:00.000+0000",
+    "createdDate" : "2018-12-12T02:03:35.268+0000",
+    "updatedDate" : "2018-12-12T02:03:35.268+0000",
+    "metadata" : {
+      "createdDate" : "2018-12-12T02:03:35.264+0000",
+      "createdByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929",
+      "updatedDate" : "2018-12-12T02:03:35.264+0000",
+      "updatedByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929"
+    }
+  }, {
+    "username" : "jeremie",
+    "id" : "f57dcb71-c6ec-4e22-9d04-c956a8796755",
+    "barcode" : "722642071058931",
+    "active" : true,
+    "type" : "patron",
+    "patronGroup" : "25e9c1e9-0db6-40d3-9b4d-99e7ae15696a",
+    "proxyFor" : [ ],
+    "personal" : {
+      "lastName" : "Volkman",
+      "firstName" : "Leilani",
+      "middleName" : "Jason",
+      "email" : "jensen@fadel-vandervort-and-ward.om",
+      "phone" : "1-636-576-0596 x88048",
+      "mobilePhone" : "546-409-2280",
+      "dateOfBirth" : "1961-09-29T00:00:00.000+0000",
+      "addresses" : [ {
+        "countryId" : "US",
+        "addressLine1" : "70670 Lang Spur #511",
+        "city" : "Phenix City",
+        "region" : "ME",
+        "postalCode" : "68884",
+        "addressTypeId" : "ccbdb04b-2ce4-41b1-9cfe-00ff8cf98e4f",
+        "primaryAddress" : true
+      } ],
+      "preferredContactTypeId" : "004"
+    },
+    "enrollmentDate" : "2018-06-02T00:00:00.000+0000",
+    "expirationDate" : "2019-11-17T00:00:00.000+0000",
+    "createdDate" : "2018-12-12T02:03:21.326+0000",
+    "updatedDate" : "2018-12-12T02:03:21.326+0000",
+    "metadata" : {
+      "createdDate" : "2018-12-12T02:03:21.320+0000",
+      "createdByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929",
+      "updatedDate" : "2018-12-12T02:03:21.320+0000",
+      "updatedByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929"
+    }
+  }, {
+    "username" : "mariano",
+    "id" : "40128d65-cee2-44f7-ac44-0bc33c92d395",
+    "barcode" : "142769796483502",
+    "active" : true,
+    "type" : "patron",
+    "patronGroup" : "25e9c1e9-0db6-40d3-9b4d-99e7ae15696a",
+    "proxyFor" : [ ],
+    "personal" : {
+      "lastName" : "Wolff",
+      "firstName" : "Sage",
+      "email" : "twila@eichmann-and-sons.pt",
+      "phone" : "1-441-495-9640 x44076",
+      "mobilePhone" : "1-896-437-1954 x6638",
+      "dateOfBirth" : "1996-05-12T00:00:00.000+0000",
+      "addresses" : [ {
+        "countryId" : "US",
+        "addressLine1" : "48163 Room N",
+        "city" : "Hawaiian Gardens",
+        "region" : "OH",
+        "postalCode" : "62621-9599",
+        "addressTypeId" : "21c019cf-9d0b-4996-9d43-e2ef6a0f02be",
+        "primaryAddress" : true
+      } ],
+      "preferredContactTypeId" : "005"
+    },
+    "enrollmentDate" : "2016-08-16T00:00:00.000+0000",
+    "expirationDate" : "2019-02-27T00:00:00.000+0000",
+    "createdDate" : "2018-12-12T02:03:16.993+0000",
+    "updatedDate" : "2018-12-12T02:03:16.993+0000",
+    "metadata" : {
+      "createdDate" : "2018-12-12T02:03:16.988+0000",
+      "createdByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929",
+      "updatedDate" : "2018-12-12T02:03:16.988+0000",
+      "updatedByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929"
+    }
+  }, {
+    "username" : "damon",
+    "id" : "4a7d21ba-33fe-44a0-977c-aeca2de87193",
+    "barcode" : "246297212548931",
+    "active" : true,
+    "type" : "patron",
+    "patronGroup" : "25e9c1e9-0db6-40d3-9b4d-99e7ae15696a",
+    "proxyFor" : [ ],
+    "personal" : {
+      "lastName" : "Wyman",
+      "firstName" : "Jamarcus",
+      "middleName" : "Laury",
+      "email" : "beryl@kozey-group.br",
+      "phone" : "909.276.4367",
+      "mobilePhone" : "(849)369-1218 x70284",
+      "dateOfBirth" : "2002-03-07T00:00:00.000+0000",
+      "addresses" : [ {
+        "countryId" : "US",
+        "addressLine1" : "08513 Carroll Parks #477",
+        "city" : "Selma",
+        "region" : "WV",
+        "postalCode" : "45878-6016",
+        "addressTypeId" : "21c019cf-9d0b-4996-9d43-e2ef6a0f02be",
+        "primaryAddress" : true
+      } ],
+      "preferredContactTypeId" : "001"
+    },
+    "enrollmentDate" : "2017-03-01T00:00:00.000+0000",
+    "expirationDate" : "2019-06-06T00:00:00.000+0000",
+    "createdDate" : "2018-12-12T02:03:29.837+0000",
+    "updatedDate" : "2018-12-12T02:03:29.837+0000",
+    "metadata" : {
+      "createdDate" : "2018-12-12T02:03:29.832+0000",
+      "createdByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929",
+      "updatedDate" : "2018-12-12T02:03:29.832+0000",
+      "updatedByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929"
+    }
+  }, {
+    "username" : "america",
+    "id" : "18093a0a-9090-4c42-8ce3-6e2be24e934c",
+    "barcode" : "415937095312767",
+    "active" : true,
+    "type" : "patron",
+    "patronGroup" : "25e9c1e9-0db6-40d3-9b4d-99e7ae15696a",
+    "proxyFor" : [ ],
+    "personal" : {
+      "lastName" : "Yost",
+      "firstName" : "Louvenia",
+      "middleName" : "Aleen",
+      "email" : "octavia@lebsack-gaylord-and-koch.ar",
+      "phone" : "843-537-1434",
+      "mobilePhone" : "745-340-3343 x33259",
+      "dateOfBirth" : "1981-03-24T00:00:00.000+0000",
+      "addresses" : [ {
+        "countryId" : "US",
+        "addressLine1" : "60739 Obie Island",
+        "city" : "Murray",
+        "region" : "MS",
+        "postalCode" : "37814",
+        "addressTypeId" : "21c019cf-9d0b-4996-9d43-e2ef6a0f02be",
+        "primaryAddress" : true
+      } ],
+      "preferredContactTypeId" : "005"
+    },
+    "enrollmentDate" : "2015-08-22T00:00:00.000+0000",
+    "expirationDate" : "2019-02-26T00:00:00.000+0000",
+    "createdDate" : "2018-12-12T02:03:58.761+0000",
+    "updatedDate" : "2018-12-12T02:03:58.761+0000",
+    "metadata" : {
+      "createdDate" : "2018-12-12T02:03:58.757+0000",
+      "createdByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929",
+      "updatedDate" : "2018-12-12T02:03:58.757+0000",
+      "updatedByUserId" : "82201f14-8705-50eb-b5f0-cf0e56cf1929"
+    }
+  } ],
+  "totalRecords" : 39,
+  "resultInfo" : {
+    "totalRecords" : 39,
+    "facets" : [ ],
+    "diagnostics" : [ ]
+  }
+}
