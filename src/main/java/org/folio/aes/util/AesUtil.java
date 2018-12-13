@@ -1,5 +1,9 @@
 package org.folio.aes.util;
 
+import java.util.List;
+
+import com.jayway.jsonpath.JsonPath;
+
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -46,5 +50,17 @@ public class AesUtil {
         jsonObject.put(s, Constant.PASSWORD_MASK);
       }
     }
+  }
+
+  public static boolean containsPII(String bodyString) {
+    for (final JsonPath jp : Constant.PII_JSON_PATHS) {
+      final List<String> pathList = jp.read(bodyString,
+          Constant.PII_JSON_PATH_CONFIG);
+      if (!pathList.isEmpty()) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
