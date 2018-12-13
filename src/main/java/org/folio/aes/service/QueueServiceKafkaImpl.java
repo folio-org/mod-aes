@@ -6,15 +6,9 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -41,9 +35,9 @@ import io.vertx.kafka.client.producer.KafkaProducerRecord;
  * @author hji
  *
  */
-public class KafkaQueueService implements QueueService {
+public class QueueServiceKafkaImpl implements QueueService {
 
-  private static Logger logger = LoggerFactory.getLogger(KafkaQueueService.class);
+  private static Logger logger = LoggerFactory.getLogger(QueueServiceKafkaImpl.class);
 
   private Vertx vertx;
   private String defaultKafkaUrl;
@@ -51,7 +45,7 @@ public class KafkaQueueService implements QueueService {
   // keep Kafka producers
   private ConcurrentMap<String, KafkaProducer<String, String>> producers = new ConcurrentHashMap<>();
 
-  public KafkaQueueService(Vertx vertx, String kafkaUrl) {
+  public QueueServiceKafkaImpl(Vertx vertx, String kafkaUrl) {
     this.vertx = vertx;
     this.defaultKafkaUrl = kafkaUrl;
     producers.put(kafkaUrl, createProducer(kafkaUrl));
@@ -59,31 +53,31 @@ public class KafkaQueueService implements QueueService {
 
   @Override
   public CompletableFuture<Void> send(String topic, String msg) {
-    return send(defaultKafkaUrl, topic, msg);
+    return send(topic, msg, defaultKafkaUrl);
   }
 
   @Override
-  public CompletableFuture<Void> send(String kafkaUrl, String topic, String msg) {
+  public CompletableFuture<Void> send(String topic, String msg, String kafkaUrl) {
     CompletableFuture<Void> cf = new CompletableFuture<Void>();
-
-    getOrCreateProducer(kafkaUrl).thenCompose(p -> CompletableFuture.runAsync(() -> {
-      p.write(KafkaProducerRecord.create(topic, msg), res -> {
-        if (res.succeeded()) {
-          logger.debug("Send OK: " + msg);
-          cf.complete(null);
-        } else {
-          logger.warn("Send not OK: " + msg);
-          cf.completeExceptionally(res.cause());
+    getOrCreateProducer(kafkaUrl)
+      .thenCompose(p -> CompletableFuture.runAsync(() -> {
+        p.write(KafkaProducerRecord.create(topic, msg), res -> {
+          if (res.succeeded()) {
+            logger.debug("Send OK: " + msg);
+            cf.complete(null);
+          } else {
+            logger.warn("Send not OK: " + msg);
+            cf.completeExceptionally(res.cause());
+          }
+        });
+      })).handle((res, ex) -> {
+        if (ex != null) {
+          logger.warn(ex);
+          cf.completeExceptionally(ex);
+          return ex;
         }
+        return res;
       });
-    })).handle((res, ex) -> {
-      if (ex != null) {
-        logger.warn(ex);
-        cf.completeExceptionally(ex);
-      }
-      return res;
-    });
-
     return cf;
   }
 
@@ -94,35 +88,16 @@ public class KafkaQueueService implements QueueService {
       futures.add(CompletableFuture.runAsync(() -> {
         v.close(ar -> {
           if (ar.succeeded()) {
-            logger.info(k + " is stopped.");
+            logger.info(k + " stopped.");
           } else {
-            logger.warn(k + " was failed to stop.");
+            logger.warn(k + " failed to stop.");
           }
         });
       }));
     });
-    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
+    return CompletableFuture.allOf(
+      futures.toArray(new CompletableFuture[futures.size()]));
   }
-
-//  private void getProducer(String kafkaUrl, Handler<AsyncResult<KafkaProducer<String, String>>> resultHandler) {
-//    logger.debug("Get Kafka producer for " + kafkaUrl);
-//    KafkaProducer<String, String> producer = producers.get(kafkaUrl);
-//    if (producer != null) {
-//      logger.debug("Return an existing producer " + System.identityHashCode(producer));
-//      resultHandler.handle(Future.succeededFuture(producer));
-//    } else {
-//      KafkaProducer<String, String> newProducer = createProducer(kafkaUrl);
-//      KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
-//      // just in case that a duplicate is created due to competition
-//      if (p != null) {
-//        logger.warn("Close a producer duplicate");
-//        newProducer.close();
-//        resultHandler.handle(Future.succeededFuture(p));
-//      } else {
-//        resultHandler.handle(Future.succeededFuture(newProducer));
-//      }
-//    }
-//  }
 
   private CompletableFuture<KafkaProducer<String, String>> getOrCreateProducer(String kafkaUrl) {
     logger.debug("Get Kafka producer for " + kafkaUrl);
@@ -132,16 +107,25 @@ public class KafkaQueueService implements QueueService {
       logger.debug("Return an existing producer " + System.identityHashCode(producer));
       cf.complete(producer);
     } else {
-      CompletableFuture.supplyAsync(() -> createProducer(kafkaUrl)).thenAccept(newProducer -> {
+      CompletableFuture.supplyAsync(() -> {
+        return createProducer(kafkaUrl);
+      }).thenAccept(newProducer -> {
         KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
         // just in case that a duplicate is created due to competition
         if (p != null) {
           logger.warn("Close a producer duplicate " + System.identityHashCode(newProducer));
-          newProducer.close();
+          CompletableFuture.runAsync(() -> newProducer.close());
           cf.complete(p);
         } else {
           cf.complete(newProducer);
         }
+      }).handle((res, ex) -> {
+        if (ex != null) {
+          logger.warn(ex);
+          cf.completeExceptionally(ex);
+          return ex;
+        }
+        return res;
       });
     }
     return cf;
@@ -158,16 +142,15 @@ public class KafkaQueueService implements QueueService {
 
   // quick test
   public static void main(String[] args) throws Exception {
-    String kafkaUrl = "";
-    // String kafkaUrl = "10.23.33.20:9092"; // dev instance
+    String kafkaUrl = "10.23.33.20:9092";
     Vertx vertx = Vertx.vertx();
-    KafkaQueueService kafkaService = new KafkaQueueService(vertx, kafkaUrl);
-    @SuppressWarnings("rawtypes")
+    QueueService queueService = new QueueServiceKafkaImpl(vertx, kafkaUrl);
     List<CompletableFuture<Void>> futures = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      futures.add(kafkaService.send("hji-test", "testing " + i));
+      futures.add(queueService.send("hji-test", "testing " + i));
     }
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
+    queueService.stop().thenRun(() -> vertx.close());
   }
 
 }

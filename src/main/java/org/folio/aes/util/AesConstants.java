@@ -28,14 +28,18 @@ public class AesConstants {
   public static final String PHASE_POST = "post";
 
   public static final String TENANT_NONE = "tenant_none";
-  /**
-   * http body size threshold to put in message
-   */
-  public static final int BODY_LIMIT = 10000;
 
   public static final String ROUTING_CRITERIA = "criteria";
   public static final String ROUTING_TARGET = "target";
 
   public static final String AES_FILTER_ID = "x-okapi-aes-filter-id";
+
+  // message related JSON keys
+  public static final String MSG_PATH = "path";
+  public static final String MSG_HEADERS = "headers";
+  public static final String MSG_PARAMS = "params";
+  public static final String MSG_BODY = "body";
+  public static final String MSG_BODY_CONTENT = "content";
+  public static final int MSG_BODY_LIMIT = 10000;
 
 }

@@ -1,5 +1,6 @@
 package org.folio.aes.util;
 
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -10,6 +11,7 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.ReadContext;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -76,6 +78,27 @@ public class AesUtils {
       if (jsonObject.containsKey(s)) {
         jsonObject.put(s, AesConstants.PASSWORD_MASK);
       }
+    }
+  }
+
+  /**
+   * Decode Okapi token to {@link JsonObject}
+   *
+   * @param okapiToken
+   * @return
+   */
+  public static JsonObject decodeOkapiToken(String okapiToken) {
+    String encodedJson;
+    try {
+      encodedJson = okapiToken.split("\\.")[1];
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new IllegalArgumentException(e.getMessage());
+    }
+    String decodedJson = new String(Base64.getDecoder().decode(encodedJson));
+    try {
+      return new JsonObject(decodedJson);
+    } catch (DecodeException e) {
+      throw new IllegalArgumentException(e.getMessage());
     }
   }
 
