@@ -18,7 +18,7 @@ public interface QueueService {
   CompletableFuture<Void> send(String topic, String msg);
 
   /**
-   * Send message to topic for given queue.
+   * Send message to topic of given queue.
    *
    * @param topic
    * @param msg
