@@ -42,9 +42,6 @@ public class AesConstants {
   public static final String MSG_BODY_CONTENT = "content";
   public static final String MSG_PII = "pii";
 
-  // message body content size limit
-  public static final int MSG_BODY_CONTENT_LIMIT = 10000;
-
   // message password masking
   public static List<String> MSG_PASSWORDS = Arrays.asList("password", "newPassword");
   public static final String MSG_PASSWORD_MASK = "xxx";

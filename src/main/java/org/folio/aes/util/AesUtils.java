@@ -24,7 +24,7 @@ public class AesUtils {
 
   // adjust JsonPath configuration to simplify path checking
   private static final Configuration jpConfig = Configuration.defaultConfiguration()
-    .addOptions(Option.SUPPRESS_EXCEPTIONS).addOptions(Option.ALWAYS_RETURN_LIST);
+    .addOptions(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST);
 
   /**
    * Check JsonPaths.
@@ -91,7 +91,6 @@ public class AesUtils {
         return true;
       }
     }
-
     return false;
   }
 

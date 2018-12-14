@@ -8,8 +8,7 @@
       ],
       "pathPattern": "/*",
       "modulePermissions": [
-        "configuration.entries.collection.get",
-        "configuration.entries.item.get"
+        "configuration.entries.collection.get"
       ],
       "phase": "pre",
       "type": "request-only"
@@ -20,8 +19,7 @@
       ],
       "pathPattern": "/*",
       "modulePermissions": [
-        "configuration.entries.collection.get",
-        "configuration.entries.item.get"
+        "configuration.entries.collection.get"
       ],
       "phase": "post",
       "type": "request-only"

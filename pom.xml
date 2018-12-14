@@ -20,7 +20,6 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <vertx.version>3.5.4</vertx.version>
     <rest-assured.version>3.1.0</rest-assured.version>
-    <jackson.version>2.9.7</jackson.version>
     <jsonpath.version>2.4.0</jsonpath.version>
     <junit.version>4.12</junit.version>
   </properties>
@@ -153,11 +152,6 @@
       <groupId>com.jayway.jsonpath</groupId>
       <artifactId>json-path</artifactId>
       <version>${jsonpath.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.dataformat</groupId>
-      <artifactId>jackson-dataformat-yaml</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
 
   </dependencies>
