@@ -37,8 +37,26 @@ public class AesService {
 
   public void prePostHandler(RoutingContext ctx) {
     MultiMap headers = ctx.request().headers();
+    boolean skip = false;
     // TODO: need a better way to skip self-calling
-    if (headers.contains(AES_FILTER_ID)) {
+    if (headers.contains(OKAPI_AES_FILTER_ID)) {
+      skip = true;
+    }
+    // skip FOLIO internal AUTH checking
+    String token = headers.get(OKAPI_TOKEN);
+    if (!skip && token != null) {
+      JsonObject jo = new JsonObject();
+      try {
+        jo = AesUtils.decodeOkapiToken(token);
+        if (OKAPI_TOKEN_AUTH_MOD.equals(jo.getString(OKAPI_TOKEN_SUB))) {
+          skip = true;
+        }
+      } catch (Exception e) {
+        logger.warn("Invalid Okapi token format: " + token);
+        skip = true;
+      }
+    }
+    if (skip) {
       ctx.response().end();
       return;
     }
@@ -49,10 +67,9 @@ public class AesService {
 
     String okapiUrl = headers.get(OKAPI_URL) + CONFIG_ROUTING_QUREY;
     String tenant = headers.get(OKAPI_TENANT);
-    String token = headers.get(OKAPI_TOKEN);
 
-    // caller does not care, so run it async for efficiency
-    CompletableFuture cf = CompletableFuture.runAsync(() -> {
+    // Run it asynchronously since OKAPI does not care response
+    CompletableFuture.runAsync(() -> {
       if (tenant == null) {
         // edge case: always send a copy for no-tenant request
         queueService.send(TENANT_NONE, msg);
@@ -70,11 +87,6 @@ public class AesService {
           }).handle((res, ex) -> {
             if (ex != null) {
               logger.warn(ex);
-              ex.printStackTrace();
-              if (token != null) {
-                System.out.println(AesUtils.decodeOkapiToken(token).encodePrettily());
-              }
-              System.out.println(msg);
               return ex;
             } else {
               return res;
@@ -83,12 +95,6 @@ public class AesService {
       }
     });
 
-    try {
-      cf.get();
-    } catch (Exception e) {
-      System.out.println("From catched exception");
-      e.printStackTrace();
-    }
     ctx.response().end();
   }
 
@@ -98,9 +104,9 @@ public class AesService {
     data.put(MSG_HEADERS, AesUtils.convertMultiMapToJsonObject(ctx.request().headers()));
     data.put(MSG_PARAMS, AesUtils.convertMultiMapToJsonObject(ctx.request().params()));
     String bodyString = ctx.getBodyAsString();
-    if (bodyString.length() > MSG_BODY_LIMIT) {
+    if (bodyString.length() > MSG_BODY_CONTENT_LIMIT) {
       data.put(MSG_BODY, new JsonObject().put(MSG_BODY_CONTENT,
-        bodyString.substring(0, MSG_BODY_LIMIT) + "..."));
+        bodyString.substring(0, MSG_BODY_CONTENT_LIMIT) + "..."));
     data.put("pii", AesUtil.containsPII(bodyString));
     if (bodyString.length() > BODY_LIMIT) {
       data.put("body", new JsonObject().put("content",

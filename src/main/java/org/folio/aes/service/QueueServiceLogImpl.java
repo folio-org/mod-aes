@@ -16,8 +16,8 @@ public class QueueServiceLogImpl implements QueueService {
   @Override
   public CompletableFuture<Void> send(String topic, String msg) {
     CompletableFuture<Void> cf = new CompletableFuture<Void>();
-    logger.debug("topic: " + topic);
-    logger.debug(msg);
+    logger.info("topic: " + topic);
+    logger.info(msg);
     cf.complete(null);
     return cf;
   }

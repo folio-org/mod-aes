@@ -74,9 +74,9 @@ public class AesUtils {
    * @param jsonObject
    */
   public static void maskPassword(JsonObject jsonObject) {
-    for (String s : AesConstants.PASSWORDS) {
+    for (String s : AesConstants.MSG_PASSWORDS) {
       if (jsonObject.containsKey(s)) {
-        jsonObject.put(s, AesConstants.PASSWORD_MASK);
+        jsonObject.put(s, AesConstants.MSG_PASSWORD_MASK);
       }
     }
   }
