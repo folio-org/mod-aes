@@ -43,8 +43,8 @@ public class AesConstants {
   public static final String MSG_PII = "pii";
 
   // message password masking
-  public static List<String> MSG_PASSWORDS = Arrays.asList("password", "newPassword");
-  public static final String MSG_PASSWORD_MASK = "xxx";
+  public static final List<String> MSG_PW = Collections.unmodifiableList(Arrays.asList("password", "newPassword"));
+  public static final String MSG_PW_MASK = "xxx";
 
   public static final Configuration PII_JSON_PATH_CONFIG = Configuration
     .defaultConfiguration()

@@ -64,7 +64,7 @@ public class AesUtilsTest {
       afterMask.forEach(entry -> {
         if (entry.getKey().contains("assword")) {
           assertNotEquals(entry.getValue().toString(), beforeMask.getString(entry.getKey()));
-          assertEquals(AesConstants.MSG_PASSWORD_MASK, entry.getValue().toString());
+          assertEquals(AesConstants.MSG_PW_MASK, entry.getValue().toString());
         } else {
           assertEquals(entry.getValue().toString(), beforeMask.getString(entry.getKey()));
         }

@@ -27,7 +27,7 @@ public class RuleServiceConfigImpl implements RuleService {
 
   private static Logger logger = LoggerFactory.getLogger(RuleServiceConfigImpl.class);
 
-  private static final long cachePeriod = 1 * 60 * 1000; // one minute
+  private static final long CACHE_PERIOD = 1 * 60 * 1000L; // one minute
 
   private Vertx vertx;
   private ConcurrentMap<String, CachedRoutingRules> cachedRules = new ConcurrentHashMap<>();
@@ -37,8 +37,8 @@ public class RuleServiceConfigImpl implements RuleService {
   }
 
   private static class CachedRoutingRules {
-    public long timestamp = 0L;
-    public Collection<RoutingRule> rules = new ArrayList<>();
+    private long timestamp = 0L;
+    private Collection<RoutingRule> rules = new ArrayList<>();
 
     public CachedRoutingRules(long timestamp, Collection<RoutingRule> rules) {
       this.timestamp = timestamp;
@@ -50,7 +50,7 @@ public class RuleServiceConfigImpl implements RuleService {
   public CompletableFuture<Collection<RoutingRule>> getRules(String okapiUrl, String tenant, String token) {
     CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
     CachedRoutingRules cache = cachedRules.get(tenant);
-    if (cache != null && (System.currentTimeMillis() - cache.timestamp < cachePeriod)) {
+    if (cache != null && (System.currentTimeMillis() - cache.timestamp < CACHE_PERIOD)) {
       cf.complete(cache.rules);
     } else {
       logger.info("Refresh routing rules for tenant " + tenant);

@@ -58,10 +58,10 @@ public class QueueServiceKafkaImpl implements QueueService {
 
   @Override
   public CompletableFuture<Void> send(String topic, String msg, String kafkaUrl) {
-    CompletableFuture<Void> cf = new CompletableFuture<Void>();
+    CompletableFuture<Void> cf = new CompletableFuture<>();
     getOrCreateProducer(kafkaUrl)
-      .thenCompose(p -> CompletableFuture.runAsync(() -> {
-        p.write(KafkaProducerRecord.create(topic, msg), res -> {
+      .thenCompose(p -> CompletableFuture
+        .runAsync(() -> p.write(KafkaProducerRecord.create(topic, msg), res -> {
           if (res.succeeded()) {
             logger.debug("Send OK: " + msg);
             cf.complete(null);
@@ -69,8 +69,8 @@ public class QueueServiceKafkaImpl implements QueueService {
             logger.warn("Send not OK: " + msg);
             cf.completeExceptionally(res.cause());
           }
-        });
-      })).handle((res, ex) -> {
+        })))
+      .handle((res, ex) -> {
         if (ex != null) {
           logger.warn(ex);
           cf.completeExceptionally(ex);
@@ -84,17 +84,14 @@ public class QueueServiceKafkaImpl implements QueueService {
   @Override
   public CompletableFuture<Void> stop() {
     List<CompletableFuture<Void>> futures = new ArrayList<>();
-    producers.forEach((k, v) -> {
-      futures.add(CompletableFuture.runAsync(() -> {
-        v.close(ar -> {
-          if (ar.succeeded()) {
-            logger.info(k + " stopped.");
-          } else {
-            logger.warn(k + " failed to stop.");
-          }
-        });
-      }));
-    });
+    producers.forEach((k, v) -> futures.add(CompletableFuture
+      .runAsync(() -> v.close(ar -> {
+        if (ar.succeeded()) {
+          logger.info(k + " stopped.");
+        } else {
+          logger.warn(k + " failed to stop.");
+        }
+      }))));
     return CompletableFuture.allOf(
       futures.toArray(new CompletableFuture[futures.size()]));
   }
@@ -107,26 +104,26 @@ public class QueueServiceKafkaImpl implements QueueService {
       logger.debug("Return an existing producer " + System.identityHashCode(producer));
       cf.complete(producer);
     } else {
-      CompletableFuture.supplyAsync(() -> {
-        return createProducer(kafkaUrl);
-      }).thenAccept(newProducer -> {
-        KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
-        // just in case that a duplicate is created due to competition
-        if (p != null) {
-          logger.warn("Close a producer duplicate " + System.identityHashCode(newProducer));
-          CompletableFuture.runAsync(() -> newProducer.close());
-          cf.complete(p);
-        } else {
-          cf.complete(newProducer);
-        }
-      }).handle((res, ex) -> {
-        if (ex != null) {
-          logger.warn(ex);
-          cf.completeExceptionally(ex);
-          return ex;
-        }
-        return res;
-      });
+      CompletableFuture
+        .supplyAsync(() -> createProducer(kafkaUrl))
+        .thenAccept(newProducer -> {
+          KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
+          // just in case that a duplicate is created due to competition
+          if (p != null) {
+            logger.warn("Close a producer duplicate " + System.identityHashCode(newProducer));
+            CompletableFuture.runAsync(newProducer::close);
+            cf.complete(p);
+          } else {
+            cf.complete(newProducer);
+          }
+        }).handle((res, ex) -> {
+          if (ex != null) {
+            logger.warn(ex);
+            cf.completeExceptionally(ex);
+            return ex;
+          }
+          return res;
+        });
     }
     return cf;
   }
@@ -150,7 +147,7 @@ public class QueueServiceKafkaImpl implements QueueService {
       futures.add(queueService.send("hji-test", "testing " + i));
     }
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
-    queueService.stop().thenRun(() -> vertx.close());
+    queueService.stop().thenRun(vertx::close);
   }
 
 }

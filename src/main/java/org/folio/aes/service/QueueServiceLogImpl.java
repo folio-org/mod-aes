@@ -15,7 +15,7 @@ public class QueueServiceLogImpl implements QueueService {
 
   @Override
   public CompletableFuture<Void> send(String topic, String msg) {
-    CompletableFuture<Void> cf = new CompletableFuture<Void>();
+    CompletableFuture<Void> cf = new CompletableFuture<>();
     logger.info("topic: " + topic);
     logger.info(msg);
     cf.complete(null);
@@ -29,7 +29,7 @@ public class QueueServiceLogImpl implements QueueService {
 
   @Override
   public CompletableFuture<Void> stop() {
-    CompletableFuture<Void> cf = new CompletableFuture<Void>();
+    CompletableFuture<Void> cf = new CompletableFuture<>();
     cf.complete(null);
     return cf;
   }

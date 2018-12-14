@@ -38,7 +38,7 @@ public class AesService {
   public void prePostHandler(RoutingContext ctx) {
     MultiMap headers = ctx.request().headers();
     boolean skip = false;
-    // TODO: need a better way to skip self-calling
+    // need a better way to skip self-calling
     if (headers.contains(OKAPI_AES_FILTER_ID)) {
       skip = true;
     }

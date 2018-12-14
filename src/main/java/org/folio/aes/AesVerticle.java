@@ -54,7 +54,7 @@ public class AesVerticle extends AbstractVerticle {
   public void stop(Future<Void> fut) {
     if (aesService != null) {
       aesService.stop()
-        .thenRun(() -> fut.complete())
+        .thenRun(fut::complete)
         .handle((res, ex) -> {
           if (ex != null) {
             logger.warn(ex);
