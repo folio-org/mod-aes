@@ -43,6 +43,7 @@ public class AesConstants {
   public static final String MSG_PII = "pii";
 
   // message password masking
+  @SuppressWarnings({"squid:S2068"})
   public static final List<String> MSG_PW = Collections.unmodifiableList(Arrays.asList("password", "newPassword"));
   public static final String MSG_PW_MASK = "xxx";
 
