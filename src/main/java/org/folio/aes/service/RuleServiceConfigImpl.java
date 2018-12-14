@@ -50,12 +50,7 @@ public class RuleServiceConfigImpl implements RuleService {
   public CompletableFuture<Collection<RoutingRule>> getRules(String okapiUrl, String tenant, String token) {
     CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
     CachedRoutingRules cache = cachedRules.get(tenant);
-    // enable module for tenant, let it pass but make it stale in 5 seconds
-    if (cache == null) {
-      cache = new CachedRoutingRules(System.currentTimeMillis() - cachePeriod + 5000, new ArrayList<>());
-      cachedRules.putIfAbsent(tenant, cache);
-    }
-    if (System.currentTimeMillis() - cache.timestamp < cachePeriod) {
+    if (cache != null && (System.currentTimeMillis() - cache.timestamp < cachePeriod)) {
       cf.complete(cache.rules);
     } else {
       logger.info("Refresh routing rules for tenant " + tenant);
@@ -79,7 +74,7 @@ public class RuleServiceConfigImpl implements RuleService {
   private CompletableFuture<Collection<RoutingRule>> getFreshRules(String okapiUrl, String tenant, String token) {
     CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
     HttpRequest<Buffer> request = WebClient.create(vertx).getAbs(okapiUrl);
-    MultiMap headers = request.headers().set("Accept", "application/json").set(AES_FILTER_ID, "true");
+    MultiMap headers = request.headers().set("Accept", "application/json").set(OKAPI_AES_FILTER_ID, "true");
     if (tenant != null) {
       headers.set(OKAPI_TENANT, tenant);
     }
@@ -91,11 +86,11 @@ public class RuleServiceConfigImpl implements RuleService {
         HttpResponse<Buffer> response = ar.result();
         if (response.statusCode() == 200) {
           Collection<RoutingRule> rules = new ArrayList<>();
-          response.bodyAsJsonObject().getJsonArray("configs")
+          response.bodyAsJsonObject().getJsonArray(CONFIG_CONFIGS)
             .forEach(item -> {
-              JsonObject jo = new JsonObject(((JsonObject) item).getString("value"));
-              String topic = String.format("%s_%s", tenant, jo.getString(ROUTING_TARGET));
-              rules.add(new RoutingRule(jo.getString(ROUTING_CRITERIA), topic));
+              JsonObject jo = new JsonObject(((JsonObject) item).getString(CONFIG_VALUE));
+              String topic = String.format("%s_%s", tenant, jo.getString(CONFIG_ROUTING_TARGET));
+              rules.add(new RoutingRule(jo.getString(CONFIG_ROUTING_CRITERIA), topic));
             });
           cf.complete(rules);
         } else {

@@ -140,7 +140,7 @@ public class QueueServiceKafkaImpl implements QueueService {
     return producer;
   }
 
-  // quick test
+  // for development
   public static void main(String[] args) throws Exception {
     String kafkaUrl = "10.23.33.20:9092";
     Vertx vertx = Vertx.vertx();

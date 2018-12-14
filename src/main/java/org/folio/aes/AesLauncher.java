@@ -4,7 +4,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 
-// Just used for dev testing
+// Just for development
 public class AesLauncher {
 
   static {
@@ -13,10 +13,9 @@ public class AesLauncher {
 
   public static void main(String[] args) {
     int processors = Runtime.getRuntime().availableProcessors();
-//    DeploymentOptions options = new DeploymentOptions().setInstances(processors * 2);
-    DeploymentOptions options = new DeploymentOptions().setInstances(1);
-    Vertx.vertx(new VertxOptions().setBlockedThreadCheckInterval(60000)).deployVerticle(AesVerticle.class.getName(),
-      options);
+    DeploymentOptions dopt = new DeploymentOptions().setInstances(processors * 2);
+    VertxOptions vopt = new VertxOptions().setBlockedThreadCheckInterval(60000);
+    Vertx.vertx(vopt).deployVerticle(AesVerticle.class.getName(), dopt);
   }
 
 }
