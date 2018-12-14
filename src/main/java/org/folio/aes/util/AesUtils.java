@@ -1,5 +1,7 @@
 package org.folio.aes.util;
 
+import static org.folio.aes.util.AesConstants.*;
+
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
@@ -74,17 +76,17 @@ public class AesUtils {
    * @param jsonObject
    */
   public static void maskPassword(JsonObject jsonObject) {
-    for (String s : AesConstants.MSG_PASSWORDS) {
+    for (String s : MSG_PASSWORDS) {
       if (jsonObject.containsKey(s)) {
-        jsonObject.put(s, AesConstants.MSG_PASSWORD_MASK);
+        jsonObject.put(s, MSG_PASSWORD_MASK);
       }
     }
   }
 
   public static boolean containsPII(String bodyString) {
-    for (final JsonPath jp : Constant.PII_JSON_PATHS) {
+    for (final JsonPath jp : PII_JSON_PATHS) {
       final List<String> pathList = jp.read(bodyString,
-          Constant.PII_JSON_PATH_CONFIG);
+        PII_JSON_PATH_CONFIG);
       if (!pathList.isEmpty()) {
         return true;
       }
@@ -92,6 +94,7 @@ public class AesUtils {
 
     return false;
   }
+
   /**
    * Decode Okapi token to {@link JsonObject}
    *

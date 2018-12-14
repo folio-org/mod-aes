@@ -104,13 +104,10 @@ public class AesService {
     data.put(MSG_HEADERS, AesUtils.convertMultiMapToJsonObject(ctx.request().headers()));
     data.put(MSG_PARAMS, AesUtils.convertMultiMapToJsonObject(ctx.request().params()));
     String bodyString = ctx.getBodyAsString();
+    data.put(MSG_PII, AesUtils.containsPII(bodyString));
     if (bodyString.length() > MSG_BODY_CONTENT_LIMIT) {
       data.put(MSG_BODY, new JsonObject().put(MSG_BODY_CONTENT,
         bodyString.substring(0, MSG_BODY_CONTENT_LIMIT) + "..."));
-    data.put("pii", AesUtil.containsPII(bodyString));
-    if (bodyString.length() > BODY_LIMIT) {
-      data.put("body", new JsonObject().put("content",
-        bodyString.substring(0, BODY_LIMIT) + "..."));
     } else {
       try {
         JsonObject bodyJsonObject = new JsonObject(bodyString);
