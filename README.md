@@ -88,7 +88,7 @@ There is no public API exposed by this module.
 
 ### Code analysis
 
-[SonarQube analysis](https://sonarcloud.io/dashboard?id=org.folio.rest%3Amod-aes).
+[SonarQube analysis](https://sonarcloud.io/dashboard?id=org.folio%3Amod-aes).
 
 ### Download and configuration
 
