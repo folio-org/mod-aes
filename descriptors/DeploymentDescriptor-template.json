@@ -2,7 +2,7 @@
   "srvcId": "${artifactId}-${version}",
   "nodeId": "localhost",
   "descriptor": {
-    "exec": "java -Dport=%p -jar ../mod-aes/target/mod-aes.jar -Dhttp.port=%p"
+    "exec": "java -Dport=%p -jar ../mod-aes/target/mod-aes-fat.jar -Dhttp.port=%p"
   }
 }
 
