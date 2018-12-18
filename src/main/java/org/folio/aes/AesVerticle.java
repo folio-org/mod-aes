@@ -3,6 +3,9 @@ package org.folio.aes;
 import static org.folio.aes.util.AesConstants.*;
 
 import org.folio.aes.service.AesService;
+import org.folio.aes.service.QueueServiceKafkaImpl;
+import org.folio.aes.service.QueueServiceLogImpl;
+import org.folio.aes.service.RuleServiceConfigImpl;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -15,7 +18,7 @@ public class AesVerticle extends AbstractVerticle {
 
   private static final Logger logger = LoggerFactory.getLogger(AesVerticle.class);
 
-  private AesService aesService = null;
+  private AesService aesService = new AesService();
 
   @Override
   public void start(Future<Void> fut) throws Exception {
@@ -27,7 +30,9 @@ public class AesVerticle extends AbstractVerticle {
 
     String kafkaUrl = System.getProperty("kafka.url", null);
 
-    aesService = new AesService(vertx, kafkaUrl);
+    aesService.setRuleService(new RuleServiceConfigImpl(vertx));
+    aesService.setQueueService(
+      kafkaUrl == null ? new QueueServiceLogImpl() : new QueueServiceKafkaImpl(vertx, kafkaUrl));
 
     Router router = Router.router(vertx);
     // root
