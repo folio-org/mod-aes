@@ -41,6 +41,7 @@ public class QueueServiceKafkaImpl implements QueueService {
 
   private Vertx vertx;
   private String defaultKafkaUrl;
+  private KafkaService kafkaService = new KafkaService();
 
   // keep Kafka producers
   private ConcurrentMap<String, KafkaProducer<String, String>> producers = new ConcurrentHashMap<>();
@@ -132,7 +133,7 @@ public class QueueServiceKafkaImpl implements QueueService {
     logger.info("Create Kafka producer for " + kafkaUrl);
     Properties config = new Properties();
     config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
-    KafkaProducer<String, String> producer = KafkaProducer.create(vertx, config, String.class, String.class);
+    KafkaProducer<String, String> producer = getKafkaService().createProducer(vertx, config);
     producer.exceptionHandler(e -> logger.warn(e));
     return producer;
   }
@@ -148,6 +149,14 @@ public class QueueServiceKafkaImpl implements QueueService {
     }
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
     queueService.stop().thenRun(vertx::close);
+  }
+
+  public KafkaService getKafkaService() {
+    return kafkaService;
+  }
+
+  public void setKafkaService(KafkaService kafkaService) {
+    this.kafkaService = kafkaService;
   }
 
 }
