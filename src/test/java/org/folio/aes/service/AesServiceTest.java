@@ -27,15 +27,18 @@ public class AesServiceTest {
 
   @Mock
   private RuleService ruleService;
+
   @Mock
   private QueueService queueService;
 
   @Mock
-  RoutingContext ctx;
+  private RoutingContext ctx;
+
   @Mock
-  HttpServerRequest request;
+  private HttpServerRequest request;
+
   @Mock
-  HttpServerResponse response;
+  private HttpServerResponse response;
 
   @InjectMocks
   private AesService aesService;
@@ -78,7 +81,7 @@ public class AesServiceTest {
   public void testSendSkipInternalAuth() {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TOKEN,
-      "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJfQVVUSFpfTU9EVUxFXyJ9.18R_RlVJNlrDRynNEbGSRlf3E51QKYyaZOjwr9tVQmYUitJS5Ps_EeU3JVHZRrDoNnRLQGmHZwiNxMYEBBDKQQ");
+        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJfQVVUSFpfTU9EVUxFXyJ9.18R_RlVJNlrDRynNEbGSRlf3E51QKYyaZOjwr9tVQmYUitJS5Ps_EeU3JVHZRrDoNnRLQGmHZwiNxMYEBBDKQQ");
     when(request.headers()).thenReturn(headers);
     aesService.prePostHandler(ctx);
     verifyZeroInteractions(ruleService);
@@ -125,7 +128,7 @@ public class AesServiceTest {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TENANT, "abc");
     headers.add(OKAPI_TOKEN,
-      "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBodyAsString()).thenReturn("{}");

@@ -13,7 +13,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.kafka.client.producer.KafkaProducer;
-import io.vertx.kafka.client.producer.KafkaProducerRecord;
 
 /**
  * Send message to Kafka queue.
@@ -49,6 +48,13 @@ public class QueueServiceKafkaImpl implements QueueService {
   public QueueServiceKafkaImpl(Vertx vertx, String kafkaUrl) {
     this.vertx = vertx;
     this.defaultKafkaUrl = kafkaUrl;
+//    producers.put(kafkaUrl, createProducer(kafkaUrl));
+  }
+
+  public QueueServiceKafkaImpl(Vertx vertx, String kafkaUrl, KafkaService kafkaService) {
+    this.vertx = vertx;
+    this.defaultKafkaUrl = kafkaUrl;
+    this.kafkaService = kafkaService;
     producers.put(kafkaUrl, createProducer(kafkaUrl));
   }
 
@@ -62,14 +68,15 @@ public class QueueServiceKafkaImpl implements QueueService {
     CompletableFuture<Void> cf = new CompletableFuture<>();
     getOrCreateProducer(kafkaUrl)
       .thenCompose(p -> CompletableFuture
-        .runAsync(() -> p.write(KafkaProducerRecord.create(topic, msg), res -> {
+        .runAsync(() -> p.write(getKafkaService().createProducerRecord(topic, msg), res -> {
           if (res.succeeded()) {
-            logger.debug("Send OK: " + msg);
+            logger.info("Send OK: " + msg);
             cf.complete(null);
           } else {
             logger.warn("Send not OK: " + msg);
             cf.completeExceptionally(res.cause());
           }
+          System.out.println("something here");
         })))
       .handle((res, ex) -> {
         if (ex != null) {
@@ -134,7 +141,8 @@ public class QueueServiceKafkaImpl implements QueueService {
     Properties config = new Properties();
     config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
     KafkaProducer<String, String> producer = getKafkaService().createProducer(vertx, config);
-    producer.exceptionHandler(e -> logger.warn(e));
+//    producer.exceptionHandler(e -> logger.warn(e));
+    logger.warn("returning producer");
     return producer;
   }
 
@@ -156,6 +164,8 @@ public class QueueServiceKafkaImpl implements QueueService {
   }
 
   public void setKafkaService(KafkaService kafkaService) {
+    System.out.println("setting service");
+    
     this.kafkaService = kafkaService;
   }
 

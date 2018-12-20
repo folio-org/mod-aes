@@ -15,7 +15,18 @@ public class KafkaServiceTest {
 
   @Test(expected = ConfigException.class)
   public void testCreateProducer() {
-    assertNotNull(KafkaService.createProducer(Vertx.vertx(), new Properties()));
+    Vertx vertx = Vertx.vertx();
+    try {
+      assertNotNull(KafkaService.createProducer(vertx, new Properties()));
+    } finally {
+      vertx.close();
+    }
+  }
+
+  @Test
+  public void testCreateProducerRecord() {
+    System.out.println(KafkaService.createProducerRecord("test", "test"));
+    assertNotNull(KafkaService.createProducerRecord("test", "test"));
   }
 
 }
