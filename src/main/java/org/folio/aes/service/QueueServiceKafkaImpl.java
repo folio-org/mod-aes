@@ -48,7 +48,7 @@ public class QueueServiceKafkaImpl implements QueueService {
   public QueueServiceKafkaImpl(Vertx vertx, String kafkaUrl) {
     this.vertx = vertx;
     this.defaultKafkaUrl = kafkaUrl;
-//    producers.put(kafkaUrl, createProducer(kafkaUrl));
+    // producers.put(kafkaUrl, createProducer(kafkaUrl));
   }
 
   public QueueServiceKafkaImpl(Vertx vertx, String kafkaUrl, KafkaService kafkaService) {
@@ -74,14 +74,15 @@ public class QueueServiceKafkaImpl implements QueueService {
             cf.complete(null);
           } else {
             logger.warn("Send not OK: " + msg);
+            System.out.println("failed");
             cf.completeExceptionally(res.cause());
           }
-          System.out.println("something here");
         })))
       .handle((res, ex) -> {
         if (ex != null) {
           logger.warn(ex);
           cf.completeExceptionally(ex);
+          System.out.println("general ex");
           return ex;
         }
         return res;
@@ -98,6 +99,7 @@ public class QueueServiceKafkaImpl implements QueueService {
           logger.info(k + " stopped.");
         } else {
           logger.warn(k + " failed to stop.");
+          throw new RuntimeException(ar.cause());
         }
       }))));
     return CompletableFuture.allOf(
@@ -141,7 +143,7 @@ public class QueueServiceKafkaImpl implements QueueService {
     Properties config = new Properties();
     config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
     KafkaProducer<String, String> producer = getKafkaService().createProducer(vertx, config);
-//    producer.exceptionHandler(e -> logger.warn(e));
+    // producer.exceptionHandler(e -> logger.warn(e));
     logger.warn("returning producer");
     return producer;
   }
@@ -165,7 +167,7 @@ public class QueueServiceKafkaImpl implements QueueService {
 
   public void setKafkaService(KafkaService kafkaService) {
     System.out.println("setting service");
-    
+
     this.kafkaService = kafkaService;
   }
 
