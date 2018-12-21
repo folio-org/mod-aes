@@ -17,22 +17,30 @@ import io.vertx.kafka.client.producer.KafkaProducer;
 /**
  * Send message to Kafka queue.
  *
- * Notes: Test environment in dev EC2
- *
  * <pre>
+ * # set up test environment
  * cd ~/hji/test/kafka-docker/
  * docker-compose -f dc.yml up -d
  * sleep 5
  * docker run -d --rm --name kafdrop -e ZK_HOSTS=10.23.33.20:2181 -e LISTEN=9010 -p9010:9010 thomsch98/kafdrop
- *
+ * # check by UI
  * http://10.23.33.20:9010
- *
+ * # clean up environment
  * docker stop kafdrop
  * docker-compose -f dc.yml down
+ * # test code
+ * public static void main(String[] args) throws Exception {
+ *   String kafkaUrl = "10.23.33.20:9092";
+ *   Vertx vertx = Vertx.vertx();
+ *   QueueService queueService = new QueueServiceKafkaImpl(vertx, kafkaUrl, new KafkaService(), false);
+ *   List<CompletableFuture<Void>> futures = new ArrayList<>();
+ *   for (int i = 0; i < 10; i++) {
+ *     futures.add(queueService.send("hji-test", "testing " + i));
+ *   }
+ *   CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
+ *   queueService.stop().thenRun(vertx::close);
+ * }
  * </pre>
- *
- * @author hji
- *
  */
 public class QueueServiceKafkaImpl implements QueueService {
 
@@ -40,22 +48,16 @@ public class QueueServiceKafkaImpl implements QueueService {
 
   private Vertx vertx;
   private String defaultKafkaUrl;
-  private KafkaService kafkaService = new KafkaService();
-
-  // keep Kafka producers
+  private KafkaService kafkaService;
   private ConcurrentMap<String, KafkaProducer<String, String>> producers = new ConcurrentHashMap<>();
 
-  public QueueServiceKafkaImpl(Vertx vertx, String kafkaUrl) {
-    this.vertx = vertx;
-    this.defaultKafkaUrl = kafkaUrl;
-    // producers.put(kafkaUrl, createProducer(kafkaUrl));
-  }
-
-  public QueueServiceKafkaImpl(Vertx vertx, String kafkaUrl, KafkaService kafkaService) {
+  public QueueServiceKafkaImpl(Vertx vertx, String kafkaUrl, KafkaService kafkaService, boolean lazy) {
     this.vertx = vertx;
     this.defaultKafkaUrl = kafkaUrl;
     this.kafkaService = kafkaService;
-    producers.put(kafkaUrl, createProducer(kafkaUrl));
+    if (!lazy) {
+      producers.put(kafkaUrl, createProducer(kafkaUrl));
+    }
   }
 
   @Override
@@ -68,13 +70,12 @@ public class QueueServiceKafkaImpl implements QueueService {
     CompletableFuture<Void> cf = new CompletableFuture<>();
     getOrCreateProducer(kafkaUrl)
       .thenCompose(p -> CompletableFuture
-        .runAsync(() -> p.write(getKafkaService().createProducerRecord(topic, msg), res -> {
+        .runAsync(() -> p.write(kafkaService.createProducerRecord(topic, msg), res -> {
           if (res.succeeded()) {
             logger.info("Send OK: " + msg);
             cf.complete(null);
           } else {
             logger.warn("Send not OK: " + msg);
-            System.out.println("failed");
             cf.completeExceptionally(res.cause());
           }
         })))
@@ -82,7 +83,6 @@ public class QueueServiceKafkaImpl implements QueueService {
         if (ex != null) {
           logger.warn(ex);
           cf.completeExceptionally(ex);
-          System.out.println("general ex");
           return ex;
         }
         return res;
@@ -142,33 +142,10 @@ public class QueueServiceKafkaImpl implements QueueService {
     logger.info("Create Kafka producer for " + kafkaUrl);
     Properties config = new Properties();
     config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
-    KafkaProducer<String, String> producer = getKafkaService().createProducer(vertx, config);
-    // producer.exceptionHandler(e -> logger.warn(e));
+    KafkaProducer<String, String> producer = kafkaService.createProducer(vertx, config);
+    producer.exceptionHandler(e -> logger.warn(e));
     logger.warn("returning producer");
     return producer;
-  }
-
-  // for development
-  public static void main(String[] args) throws Exception {
-    String kafkaUrl = "10.23.33.20:9092";
-    Vertx vertx = Vertx.vertx();
-    QueueService queueService = new QueueServiceKafkaImpl(vertx, kafkaUrl);
-    List<CompletableFuture<Void>> futures = new ArrayList<>();
-    for (int i = 0; i < 10; i++) {
-      futures.add(queueService.send("hji-test", "testing " + i));
-    }
-    CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
-    queueService.stop().thenRun(vertx::close);
-  }
-
-  public KafkaService getKafkaService() {
-    return kafkaService;
-  }
-
-  public void setKafkaService(KafkaService kafkaService) {
-    System.out.println("setting service");
-
-    this.kafkaService = kafkaService;
   }
 
 }

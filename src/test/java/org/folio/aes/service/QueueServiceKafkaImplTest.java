@@ -32,36 +32,30 @@ public class QueueServiceKafkaImplTest {
   private KafkaService kafkaService;
 
   @Mock
-  private KafkaProducer<String, String> goodKafkaProducer;
+  private KafkaProducer<String, String> kafkaProducer;
 
   @Mock
-  private KafkaProducer<String, String> badKafkaProducer;
+  private KafkaProducerRecord<String, String> producerRecord;
 
-  @Mock
-  private KafkaProducerRecord<String, String> kafkaProducerRecord;
-
-  // @InjectMocks
+  private static String kafkaUrl = "localhost";
+  private static Vertx vertx;
   private QueueService qs;
 
-  private static Vertx vertx;
-  private static String kafkaUrl;
-
   @BeforeClass
-  public static void setupBeforeClass() {
+  public static void setUpOnce() {
     vertx = Vertx.vertx();
-    kafkaUrl = "localhost";
   }
 
   @AfterClass
-  public static void tearDown() {
+  public static void tearDownOnce() {
     vertx.close();
   }
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    when(kafkaService.createProducer(any(), any())).thenReturn(goodKafkaProducer);
-    when(kafkaService.createProducerRecord(any(), any())).thenReturn(kafkaProducerRecord);
+    when(kafkaService.createProducer(any(), any())).thenReturn(kafkaProducer);
+    when(kafkaService.createProducerRecord(any(), any())).thenReturn(producerRecord);
     doAnswer(new Answer<Object>() {
       @Override
       public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -69,9 +63,8 @@ public class QueueServiceKafkaImplTest {
         handler.handle(Future.succeededFuture(new RecordMetadata()));
         return null;
       }
-    }).when(goodKafkaProducer).write(any(), any());
-    qs = new QueueServiceKafkaImpl(vertx, kafkaUrl, kafkaService);
-
+    }).when(kafkaProducer).write(any(), any());
+    qs = new QueueServiceKafkaImpl(vertx, kafkaUrl, kafkaService, true);
   }
 
   @Test
@@ -82,19 +75,16 @@ public class QueueServiceKafkaImplTest {
     }
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
     futures.forEach(future -> assertFutureOk(future));
-    verify(goodKafkaProducer, times(10)).write(any(), any());
+    verify(kafkaProducer, times(10)).write(any(), any());
   }
 
   @Test
   public void testSendEx() throws Exception {
-    doAnswer(new Answer<Object>() {
-      @Override
-      public Object answer(InvocationOnMock invocation) throws Throwable {
-        Handler<AsyncResult<RecordMetadata>> handler = invocation.getArgument(1);
-        handler.handle(Future.failedFuture("not OK"));
-        return null;
-      }
-    }).when(goodKafkaProducer).write(any(), any());
+    doAnswer(invocation -> {
+      Handler<AsyncResult<RecordMetadata>> handler = invocation.getArgument(1);
+      handler.handle(Future.failedFuture("not OK"));
+      return null;
+    }).when(kafkaProducer).write(any(), any());
     List<CompletableFuture<Void>> futures = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
       futures.add(qs.send("topic_a", "msg_" + i));
@@ -107,27 +97,14 @@ public class QueueServiceKafkaImplTest {
       }
     });
     futures.forEach(future -> assertFutureEx(future));
-    verify(goodKafkaProducer, times(10)).write(any(), any());
+    verify(kafkaProducer, times(10)).write(any(), any());
   }
 
-  private void testStop(boolean ok) throws Exception {
-    doAnswer(new Answer<Object>() {
-      @Override
-      public Object answer(InvocationOnMock invocation) throws Throwable {
-        Handler<AsyncResult<Void>> handler = invocation.getArgument(0);
-        if (ok) {
-          handler.handle(Future.succeededFuture());
-        } else {
-          handler.handle(Future.failedFuture("not OK"));
-        }
-        return null;
-      }
-    }).when(goodKafkaProducer).close(any());
-    qs.send("topic_a", "msg_a", "queue_a");
-    qs.send("topic_b", "msg_b", "queue_b");
-    CompletableFuture<Void> cf = qs.stop();
+  @Test(expected = ExecutionException.class)
+  public void testSendEx2() throws Exception {
+    when(kafkaService.createProducer(any(), any())).thenThrow(new RuntimeException("bad"));
+    CompletableFuture<Void> cf = qs.send("topic_a", "msg_a");
     cf.get();
-    assertFutureOk(cf);
   }
 
   @Test
@@ -138,6 +115,28 @@ public class QueueServiceKafkaImplTest {
   @Test(expected = ExecutionException.class)
   public void testStopEx() throws Exception {
     testStop(false);
+  }
+
+  private void testStop(boolean ok) throws Exception {
+    qs = new QueueServiceKafkaImpl(vertx, kafkaUrl, kafkaService, false);
+    doAnswer(invocation -> {
+      Handler<AsyncResult<Void>> handler = invocation.getArgument(0);
+      if (ok) {
+        handler.handle(Future.succeededFuture());
+      } else {
+        handler.handle(Future.failedFuture("not OK"));
+      }
+      return null;
+    }).when(kafkaProducer).close(any());
+    CompletableFuture<Void> cf0 = qs.send("topic_0", "msg_0");
+    CompletableFuture<Void> cfa = qs.send("topic_a", "msg_a", "queue_a");
+    CompletableFuture<Void> cfb = qs.send("topic_b", "msg_b", "queue_b");
+    cf0.get();
+    cfa.get();
+    cfb.get();
+    CompletableFuture<Void> cf = qs.stop();
+    cf.get();
+    assertFutureOk(cf);
   }
 
   private static void assertFutureOk(CompletableFuture<Void> future) {

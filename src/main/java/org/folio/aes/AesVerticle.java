@@ -3,6 +3,7 @@ package org.folio.aes;
 import static org.folio.aes.util.AesConstants.*;
 
 import org.folio.aes.service.AesService;
+import org.folio.aes.service.KafkaService;
 import org.folio.aes.service.QueueServiceKafkaImpl;
 import org.folio.aes.service.QueueServiceLogImpl;
 import org.folio.aes.service.RuleServiceConfigImpl;
@@ -32,7 +33,8 @@ public class AesVerticle extends AbstractVerticle {
 
     aesService.setRuleService(new RuleServiceConfigImpl(vertx));
     aesService.setQueueService(
-      kafkaUrl == null ? new QueueServiceLogImpl() : new QueueServiceKafkaImpl(vertx, kafkaUrl));
+      kafkaUrl == null ? new QueueServiceLogImpl()
+        : new QueueServiceKafkaImpl(vertx, kafkaUrl, new KafkaService(), false));
 
     Router router = Router.router(vertx);
     // root
