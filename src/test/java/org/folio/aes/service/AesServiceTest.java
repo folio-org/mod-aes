@@ -91,6 +91,7 @@ public class AesServiceTest {
   @Test
   public void testSendTenantNone() throws InterruptedException {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+    headers.add("Content-Type", "application/json");
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     aesService.prePostHandler(ctx);
@@ -110,6 +111,7 @@ public class AesServiceTest {
   public void testSendRuleException() throws InterruptedException {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TENANT, "abc");
+    headers.add("Content-Type", "application/json");
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
@@ -129,6 +131,7 @@ public class AesServiceTest {
     headers.add(OKAPI_TENANT, "abc");
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    headers.add("Content-Type", "application/json");
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBodyAsString()).thenReturn("{}");
