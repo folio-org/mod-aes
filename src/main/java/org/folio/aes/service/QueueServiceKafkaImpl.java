@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.KafkaException;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
@@ -98,8 +99,8 @@ public class QueueServiceKafkaImpl implements QueueService {
         if (ar.succeeded()) {
           logger.info(k + " stopped.");
         } else {
-          logger.warn(k + " failed to stop.");
-          throw new RuntimeException(ar.cause());
+          logger.warn(k + " failed to stop.", ar.cause());
+          throw new KafkaException(ar.cause());
         }
       }))));
     return CompletableFuture.allOf(

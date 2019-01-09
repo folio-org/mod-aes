@@ -1,5 +1,6 @@
 package org.folio.aes.service;
 
+import static org.awaitility.Awaitility.*;
 import static org.mockito.Mockito.*;
 
 import java.util.ArrayList;
@@ -24,6 +25,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
 public class AesServiceTest {
+
+  private static long WAIT_TS = 1000;
 
   @Mock
   private RuleService ruleService;
@@ -95,7 +98,10 @@ public class AesServiceTest {
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     aesService.prePostHandler(ctx);
-    Thread.sleep(1000);
+    long start = System.currentTimeMillis() + WAIT_TS;
+    await().until(() -> {
+      return System.currentTimeMillis() > start;
+    });
     verifyZeroInteractions(ruleService);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService, times(1)).send(eq(TENANT_NONE), argument.capture());
@@ -118,7 +124,10 @@ public class AesServiceTest {
     cf.completeExceptionally(new RuntimeException("abc"));
     when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
     aesService.prePostHandler(ctx);
-    Thread.sleep(1000);
+    long start = System.currentTimeMillis() + WAIT_TS;
+    await().until(() -> {
+      return System.currentTimeMillis() > start;
+    });
     verify(ruleService, times(1)).getRules(any(), any(), any());
     verifyZeroInteractions(queueService);
   }
@@ -143,7 +152,10 @@ public class AesServiceTest {
     cf.complete(rules);
     when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
     aesService.prePostHandler(ctx);
-    Thread.sleep(1000);
+    long start = System.currentTimeMillis() + WAIT_TS;
+    await().until(() -> {
+      return System.currentTimeMillis() > start;
+    });
     verify(ruleService, times(1)).getRules(any(), any(), any());
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService).send(eq(topicA), argument.capture());
