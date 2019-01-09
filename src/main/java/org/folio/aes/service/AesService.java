@@ -9,7 +9,6 @@ import java.util.concurrent.CompletableFuture;
 import org.folio.aes.util.AesUtils;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -22,17 +21,8 @@ public class AesService {
   private RuleService ruleService;
   private QueueService queueService;
 
-  public AesService(Vertx vertx, String kafkaUrl) {
-    ruleService = new RuleServiceConfigImpl(vertx);
-    if (kafkaUrl == null) {
-      queueService = new QueueServiceLogImpl();
-    } else {
-      queueService = new QueueServiceKafkaImpl(vertx, kafkaUrl);
-    }
-  }
-
   public CompletableFuture<Void> stop() {
-    return queueService.stop();
+    return getQueueService().stop();
   }
 
   public void prePostHandler(RoutingContext ctx) {
@@ -72,26 +62,25 @@ public class AesService {
     CompletableFuture.runAsync(() -> {
       if (tenant == null) {
         // edge case: always send a copy for no-tenant request
-        queueService.send(TENANT_NONE, msg);
+        getQueueService().send(TENANT_NONE, msg);
       } else {
-        ruleService.getRules(okapiUrl, tenant, token)
-          .thenAccept(rules -> {
-            Set<String> jsonPaths = new HashSet<>();
-            rules.forEach(r -> jsonPaths.add(r.getCriteria()));
-            Set<String> validJsonPaths = AesUtils.checkJsonPaths(msg, jsonPaths);
-            rules.forEach(r -> {
-              if (validJsonPaths.contains(r.getCriteria())) {
-                queueService.send(r.getTarget(), msg);
-              }
-            });
-          }).handle((res, ex) -> {
-            if (ex != null) {
-              logger.warn(ex);
-              return ex;
-            } else {
-              return res;
+        getRuleService().getRules(okapiUrl, tenant, token).thenAccept(rules -> {
+          Set<String> jsonPaths = new HashSet<>();
+          rules.forEach(r -> jsonPaths.add(r.getCriteria()));
+          Set<String> validJsonPaths = AesUtils.checkJsonPaths(msg, jsonPaths);
+          rules.forEach(r -> {
+            if (validJsonPaths.contains(r.getCriteria())) {
+              getQueueService().send(r.getTarget(), msg);
             }
           });
+        }).handle((res, ex) -> {
+          if (ex != null) {
+            logger.warn(ex);
+            return ex;
+          } else {
+            return res;
+          }
+        });
       }
     });
 
@@ -104,16 +93,40 @@ public class AesService {
     data.put(MSG_HEADERS, AesUtils.convertMultiMapToJsonObject(ctx.request().headers()));
     data.put(MSG_PARAMS, AesUtils.convertMultiMapToJsonObject(ctx.request().params()));
     String bodyString = ctx.getBodyAsString();
-    try {
-      JsonObject bodyJsonObject = new JsonObject(bodyString);
+    JsonObject bodyJsonObject = null;
+    if (ctx.request().headers().get("Content-Type").toLowerCase().contains("json")) {
+      try {
+        bodyJsonObject = new JsonObject(bodyString);
+      } catch (Exception e) {
+        logger.warn("Failed to convert to JSON: " + ctx.getBodyAsString());
+        bodyJsonObject = null;
+      }
+    }
+    if (bodyJsonObject != null) {
       AesUtils.maskPassword(bodyJsonObject);
       data.put(MSG_PII, AesUtils.containsPII(bodyString));
       data.put(MSG_BODY, bodyJsonObject);
-    } catch (Exception e) {
+    } else {
       data.put(MSG_PII, false);
       data.put(MSG_BODY, new JsonObject().put(MSG_BODY_CONTENT, bodyString));
     }
     return data;
+  }
+
+  public RuleService getRuleService() {
+    return ruleService;
+  }
+
+  public void setRuleService(RuleService ruleService) {
+    this.ruleService = ruleService;
+  }
+
+  public QueueService getQueueService() {
+    return queueService;
+  }
+
+  public void setQueueService(QueueService queueService) {
+    this.queueService = queueService;
   }
 
 }
