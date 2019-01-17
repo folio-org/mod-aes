@@ -9,6 +9,27 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 
 The mod-aes module implements FOLIO asynchronous event service (AES). Currently, it acts as a filter to capture traffic as JSON messages. It then routes the messages to different Kafka topic according to JSON path based routing rules that are stored in mod-config.
 
+### Quick start
+
+Compile with `mvn clean install`
+
+Run the local stand-alone instance:
+
+```
+java -jar target/mod-aes-fat.jar -Dhttp.port=8081 -Dkafka.url=10.23.33.20:9092
+```
+## Sample routing rule
+```
+{
+  "module": "AES",
+  "configName": "routing_rules",
+  "code": "rule_1",
+  "description": "for testing",
+  "default": true,
+  "enabled": true,
+  "value": "{\"criteria\":\"$[?(@.path =~ /.login.*/i)]\",\"target\":\"login\"}"
+}
+```
 ## Permissions
 
 ## Additional information
@@ -71,16 +92,6 @@ with further FOLIO Developer documentation at [dev.folio.org](https://dev.folio.
 
 See project [MODAES](https://issues.folio.org/browse/MODAES)
 at the [FOLIO issue tracker](https://dev.folio.org/guidelines/issue-tracker).
-
-### Quick start
-
-Compile with `mvn clean install`
-
-Run the local stand-alone instance:
-
-```
-java -jar target/mod-aes-fat.jar -Dhttp.port=8081 -Dkafka.url=10.23.33.20:9092
-```
 
 ### API documentation
 
