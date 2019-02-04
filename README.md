@@ -13,12 +13,14 @@ The mod-aes module implements FOLIO asynchronous event service (AES). Currently,
 
 Compile with `mvn clean install`
 
-Run the local stand-alone instance:
+Run local stand-alone instance with connection to Kafaka as below. If Kafka connection option is not provided, the module will fall back to output messages in the log.
 
 ```
 java -jar target/mod-aes-fat.jar -Dhttp.port=8081 -Dkafka.url=10.23.33.20:9092
 ```
 ## Sample routing rule
+
+Insert rules like below to mod-config. If no rules exist in mod-config, the module will fall back to route all messages to tenant_default topic.
 ```
 {
   "module": "AES",
@@ -31,6 +33,8 @@ java -jar target/mod-aes-fat.jar -Dhttp.port=8081 -Dkafka.url=10.23.33.20:9092
 }
 ```
 ## Permissions
+
+It is a pure backend module and there are no specific module permissions defined for now.
 
 ## Additional information
 
@@ -76,7 +80,7 @@ Execute the container as follows:
 
 Note: you may need to be root (sudo) to do this.
 
-Launch mod-aes as described [below](#quick-start).
+Launch mod-aes as described [above](#quick-start).
 
 Example AES input:
 ```
