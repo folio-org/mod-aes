@@ -133,6 +133,34 @@ public class AesServiceTest {
   }
 
   @Test
+  public void testSendWithoutRules() throws InterruptedException {
+    String defaultTopic = "abc_default";
+    MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+    headers.add(OKAPI_TENANT, "abc");
+    headers.add(OKAPI_TOKEN,
+        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    headers.add("Content-Type", "application/json");
+    when(request.headers()).thenReturn(headers);
+    when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
+    when(ctx.getBodyAsString()).thenReturn("{}");
+    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
+    cf.complete(new ArrayList<>());
+    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    aesService.prePostHandler(ctx);
+    long start = System.currentTimeMillis() + WAIT_TS;
+    await().until(() -> {
+      return System.currentTimeMillis() > start;
+    });
+    verify(ruleService, times(1)).getRules(any(), any(), any());
+    ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+    verify(queueService).send(eq(defaultTopic), argument.capture());
+    checkMsg(argument.getValue());
+    verify(queueService).send(eq(defaultTopic), argument.capture());
+    checkMsg(argument.getValue());
+    verifyNoMoreInteractions(queueService);
+  }
+
+  @Test
   public void testSend() throws InterruptedException {
     String topicA = "ta";
     String topicB = "tb";

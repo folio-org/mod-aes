@@ -65,14 +65,19 @@ public class AesService {
         getQueueService().send(TENANT_NONE, msg);
       } else {
         getRuleService().getRules(okapiUrl, tenant, token).thenAccept(rules -> {
-          Set<String> jsonPaths = new HashSet<>();
-          rules.forEach(r -> jsonPaths.add(r.getCriteria()));
-          Set<String> validJsonPaths = AesUtils.checkJsonPaths(msg, jsonPaths);
-          rules.forEach(r -> {
-            if (validJsonPaths.contains(r.getCriteria())) {
-              getQueueService().send(r.getTarget(), msg);
-            }
-          });
+          if (rules.isEmpty()) {
+            // send all messages to default topic if no rules defined
+            getQueueService().send(tenant + "_default", msg);
+          } else {
+            Set<String> jsonPaths = new HashSet<>();
+            rules.forEach(r -> jsonPaths.add(r.getCriteria()));
+            Set<String> validJsonPaths = AesUtils.checkJsonPaths(msg, jsonPaths);
+            rules.forEach(r -> {
+              if (validJsonPaths.contains(r.getCriteria())) {
+                getQueueService().send(r.getTarget(), msg);
+              }
+            });
+          }
         }).handle((res, ex) -> {
           if (ex != null) {
             logger.warn(ex);
