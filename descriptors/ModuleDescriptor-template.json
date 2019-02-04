@@ -11,7 +11,7 @@
         "configuration.entries.collection.get"
       ],
       "phase": "pre",
-      "type": "request-only"
+      "type": "request-log"
     },
     {
       "methods": [
@@ -22,7 +22,7 @@
         "configuration.entries.collection.get"
       ],
       "phase": "post",
-      "type": "request-only"
+      "type": "request-log"
     }
   ],
   "provides": [],
