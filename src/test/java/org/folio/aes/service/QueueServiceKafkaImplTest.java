@@ -1,74 +1,45 @@
 package org.folio.aes.service;
 
-import static org.mockito.Mockito.*;
-
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.junit5.VertxExtension;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
 import io.vertx.kafka.client.producer.RecordMetadata;
 
+@ExtendWith({VertxExtension.class, MockitoExtension.class})
 public class QueueServiceKafkaImplTest {
-
-  @Mock
-  private KafkaService kafkaService;
-
-  @Mock
-  private KafkaProducer<String, String> kafkaProducer;
-
-  @Mock
-  private KafkaProducerRecord<String, String> producerRecord;
-
   private static String kafkaUrl = "localhost";
-  private static Vertx vertx;
+
   private QueueService qs;
 
-  @BeforeClass
-  public static void setUpOnce() {
-    vertx = Vertx.vertx();
-  }
-
-  @AfterClass
-  public static void tearDownOnce() {
-    vertx.close();
-  }
-
-  @Before
-  public void setUp() {
-    MockitoAnnotations.initMocks(this);
-    when(kafkaService.createProducer(any(), any())).thenReturn(kafkaProducer);
-    when(kafkaService.createProducerRecord(any(), any())).thenReturn(producerRecord);
-    doAnswer(new Answer<Object>() {
-      @Override
-      public Object answer(InvocationOnMock invocation) throws Throwable {
-        Handler<AsyncResult<RecordMetadata>> handler = invocation.getArgument(1);
-        handler.handle(Future.succeededFuture(new RecordMetadata()));
-        return null;
-      }
-    }).when(kafkaProducer).write(any(), any());
-    qs = new QueueServiceKafkaImpl(vertx, kafkaUrl, kafkaService, true);
-  }
-
   @Test
-  public void testSend() throws Exception {
+  public void testSend(Vertx vertx, @Mock KafkaService kafkaService,
+      @Mock KafkaProducer<String, String> kafkaProducer,
+      @Mock KafkaProducerRecord<String, String> producerRecord) throws Exception {
+    defaultMocking(kafkaService, kafkaProducer, producerRecord);
+    qs = new QueueServiceKafkaImpl(vertx, kafkaUrl, kafkaService, true);
     List<CompletableFuture<Void>> futures = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
       futures.add(qs.send("topic_a", "msg_" + i));
@@ -79,7 +50,12 @@ public class QueueServiceKafkaImplTest {
   }
 
   @Test
-  public void testSendEx() throws Exception {
+  public void testSendEx(Vertx vertx, @Mock KafkaService kafkaService,
+      @Mock KafkaProducer<String, String> kafkaProducer,
+      @Mock KafkaProducerRecord<String, String> producerRecord) throws Exception {
+    when(kafkaService.createProducer(Mockito.any(), any())).thenReturn(kafkaProducer);
+    when(kafkaService.createProducerRecord(any(), any())).thenReturn(producerRecord);
+    qs = new QueueServiceKafkaImpl(vertx, kafkaUrl, kafkaService, true);
     doAnswer(invocation -> {
       Handler<AsyncResult<RecordMetadata>> handler = invocation.getArgument(1);
       handler.handle(Future.failedFuture("not OK"));
@@ -100,24 +76,40 @@ public class QueueServiceKafkaImplTest {
     verify(kafkaProducer, times(10)).write(any(), any());
   }
 
-  @Test(expected = ExecutionException.class)
-  public void testSendEx2() throws Exception {
+  @Test
+  public void testSendEx2(Vertx vertx, @Mock KafkaService kafkaService) throws Exception {
+    qs = new QueueServiceKafkaImpl(vertx, kafkaUrl, kafkaService, true);
     when(kafkaService.createProducer(any(), any())).thenThrow(new RuntimeException("bad"));
-    CompletableFuture<Void> cf = qs.send("topic_a", "msg_a");
-    cf.get();
+    assertThrows(
+        ExecutionException.class,
+        () -> {
+          CompletableFuture<Void> cf = qs.send("topic_a", "msg_a");
+          cf.get();
+        });
   }
 
   @Test
-  public void testStopOk() throws Exception {
-    testStop(true);
+  public void testStopOk(Vertx vertx, @Mock KafkaService kafkaService,
+      @Mock KafkaProducer<String, String> kafkaProducer,
+      @Mock KafkaProducerRecord<String, String> producerRecord) throws Exception {
+    defaultMocking(kafkaService, kafkaProducer, producerRecord);
+    qs = new QueueServiceKafkaImpl(vertx, kafkaUrl, kafkaService, true);
+    testStop(vertx, kafkaService, kafkaProducer, true);
   }
 
-  @Test(expected = ExecutionException.class)
-  public void testStopEx() throws Exception {
-    testStop(false);
+  @Test
+  public void testStopEx(Vertx vertx, @Mock KafkaService kafkaService,
+      @Mock KafkaProducer<String, String> kafkaProducer,
+      @Mock KafkaProducerRecord<String, String> producerRecord) throws Exception {
+    defaultMocking(kafkaService, kafkaProducer, producerRecord);
+    qs = new QueueServiceKafkaImpl(vertx, kafkaUrl, kafkaService, true);
+    assertThrows(
+        ExecutionException.class,
+        () -> testStop(vertx, kafkaService, kafkaProducer, false));
   }
 
-  private void testStop(boolean ok) throws Exception {
+  private void testStop(Vertx vertx, KafkaService kafkaService,
+      KafkaProducer<String, String> kafkaProducer, boolean ok) throws Exception {
     qs = new QueueServiceKafkaImpl(vertx, kafkaUrl, kafkaService, false);
     doAnswer(invocation -> {
       Handler<AsyncResult<Void>> handler = invocation.getArgument(0);
@@ -151,4 +143,15 @@ public class QueueServiceKafkaImplTest {
     assertTrue(future.isCompletedExceptionally());
   }
 
+  private void defaultMocking(KafkaService kafkaService,
+      KafkaProducer<String, String> kafkaProducer,
+      KafkaProducerRecord<String, String> producerRecord) {
+    when(kafkaService.createProducer(any(), any())).thenReturn(kafkaProducer);
+    when(kafkaService.createProducerRecord(any(), any())).thenReturn(producerRecord);
+    doAnswer(invocation -> {
+        Handler<AsyncResult<RecordMetadata>> handler = invocation.getArgument(1);
+        handler.handle(Future.succeededFuture(new RecordMetadata()));
+        return null;
+      }).when(kafkaProducer).write(any(), any());
+  }
 }

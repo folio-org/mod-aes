@@ -1,22 +1,37 @@
 package org.folio.aes.service;
 
-import static org.awaitility.Awaitility.*;
-import static org.mockito.Mockito.*;
+import static org.awaitility.Awaitility.await;
+import static org.folio.aes.util.AesConstants.MSG_BODY;
+import static org.folio.aes.util.AesConstants.MSG_BODY_CONTENT;
+import static org.folio.aes.util.AesConstants.MSG_HEADERS;
+import static org.folio.aes.util.AesConstants.MSG_PARAMS;
+import static org.folio.aes.util.AesConstants.MSG_PATH;
+import static org.folio.aes.util.AesConstants.MSG_PII;
+import static org.folio.aes.util.AesConstants.OKAPI_AES_FILTER_ID;
+import static org.folio.aes.util.AesConstants.OKAPI_TENANT;
+import static org.folio.aes.util.AesConstants.OKAPI_TOKEN;
+import static org.folio.aes.util.AesConstants.TENANT_NONE;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
-import static org.folio.aes.util.AesConstants.*;
-import static org.junit.Assert.*;
-
 import org.folio.aes.model.RoutingRule;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
@@ -24,6 +39,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
+@ExtendWith(MockitoExtension.class)
 public class AesServiceTest {
 
   private static long WAIT_TS = 1000;
@@ -34,25 +50,8 @@ public class AesServiceTest {
   @Mock
   private QueueService queueService;
 
-  @Mock
-  private RoutingContext ctx;
-
-  @Mock
-  private HttpServerRequest request;
-
-  @Mock
-  private HttpServerResponse response;
-
   @InjectMocks
   private AesService aesService;
-
-  @Before
-  public void setUp() {
-    aesService = new AesService();
-    MockitoAnnotations.initMocks(this);
-    when(ctx.request()).thenReturn(request);
-    when(ctx.response()).thenReturn(response);
-  }
 
   @Test
   public void testStop() throws Exception {
@@ -61,40 +60,52 @@ public class AesServiceTest {
   }
 
   @Test
-  public void testSendSkipFilterId() {
+  public void testSendSkipFilterId(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+      @Mock HttpServerResponse response) {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_AES_FILTER_ID, "true");
+    when(ctx.request()).thenReturn(request);
+    when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
     aesService.prePostHandler(ctx);
-    verifyZeroInteractions(ruleService);
-    verifyZeroInteractions(queueService);
+    verifyNoMoreInteractions(ruleService);
+    verifyNoMoreInteractions(queueService);
   }
 
   @Test
-  public void testSendSkipBadToken() {
+  public void testSendSkipBadToken(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+      @Mock HttpServerResponse response) {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TOKEN, "abc");
+    when(ctx.request()).thenReturn(request);
+    when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
     aesService.prePostHandler(ctx);
-    verifyZeroInteractions(ruleService);
-    verifyZeroInteractions(queueService);
+    verifyNoMoreInteractions(ruleService);
+    verifyNoMoreInteractions(queueService);
   }
 
   @Test
-  public void testSendSkipInternalAuth() {
+  public void testSendSkipInternalAuth(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+      @Mock HttpServerResponse response) {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJfQVVUSFpfTU9EVUxFXyJ9.18R_RlVJNlrDRynNEbGSRlf3E51QKYyaZOjwr9tVQmYUitJS5Ps_EeU3JVHZRrDoNnRLQGmHZwiNxMYEBBDKQQ");
+    when(ctx.request()).thenReturn(request);
+    when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
     aesService.prePostHandler(ctx);
-    verifyZeroInteractions(ruleService);
-    verifyZeroInteractions(queueService);
+    verifyNoMoreInteractions(ruleService);
+    verifyNoMoreInteractions(queueService);
   }
 
   @Test
-  public void testSendTenantNone() throws InterruptedException {
+  public void testSendTenantNone(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+      @Mock HttpServerResponse response) throws InterruptedException {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add("Content-Type", "application/json");
+    when(ctx.request()).thenReturn(request);
+    when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     aesService.prePostHandler(ctx);
@@ -102,7 +113,7 @@ public class AesServiceTest {
     await().until(() -> {
       return System.currentTimeMillis() > start;
     });
-    verifyZeroInteractions(ruleService);
+    verifyNoMoreInteractions(ruleService);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService, times(1)).send(eq(TENANT_NONE), argument.capture());
     JsonObject msg = new JsonObject(argument.getValue());
@@ -114,32 +125,38 @@ public class AesServiceTest {
   }
 
   @Test
-  public void testSendRuleException() throws InterruptedException {
+  public void testSendRuleException(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+      @Mock HttpServerResponse response) throws InterruptedException {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TENANT, "abc");
     headers.add("Content-Type", "application/json");
+    when(ctx.request()).thenReturn(request);
+    when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
     cf.completeExceptionally(new RuntimeException("abc"));
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    when(ruleService.getRules(Mockito.any(), any(), any())).thenReturn(cf);
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
       return System.currentTimeMillis() > start;
     });
     verify(ruleService, times(1)).getRules(any(), any(), any());
-    verifyZeroInteractions(queueService);
+    verifyNoMoreInteractions(queueService);
   }
 
   @Test
-  public void testSendWithoutRules() throws InterruptedException {
+  public void testSendWithoutRules(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+      @Mock HttpServerResponse response) throws InterruptedException {
     String defaultTopic = "abc_default";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TENANT, "abc");
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add("Content-Type", "application/json");
+    when(ctx.request()).thenReturn(request);
+    when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBodyAsString()).thenReturn("{}");
@@ -161,7 +178,8 @@ public class AesServiceTest {
   }
 
   @Test
-  public void testSend() throws InterruptedException {
+  public void testSend(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+      @Mock HttpServerResponse response) throws InterruptedException {
     String topicA = "ta";
     String topicB = "tb";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
@@ -169,6 +187,8 @@ public class AesServiceTest {
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add("Content-Type", "application/json");
+    when(ctx.request()).thenReturn(request);
+    when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBodyAsString()).thenReturn("{}");
@@ -201,5 +221,4 @@ public class AesServiceTest {
     assertTrue(msg.containsKey(MSG_PII));
     assertTrue(msg.containsKey(MSG_BODY));
   }
-
 }
