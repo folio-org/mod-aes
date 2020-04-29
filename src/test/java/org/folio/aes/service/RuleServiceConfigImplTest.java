@@ -1,6 +1,7 @@
 package org.folio.aes.service;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.folio.aes.test.Utils.nextFreePort;
 import static org.folio.aes.util.AesConstants.CONFIG_CONFIGS;
 import static org.folio.aes.util.AesConstants.CONFIG_ROUTING_CRITERIA;
 import static org.folio.aes.util.AesConstants.CONFIG_ROUTING_TARGET;
@@ -8,11 +9,8 @@ import static org.folio.aes.util.AesConstants.CONFIG_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.folio.aes.model.RoutingRule;
 import org.junit.jupiter.api.AfterAll;
@@ -88,30 +86,5 @@ public class RuleServiceConfigImplTest {
     }
     jo.put(CONFIG_CONFIGS, ja);
     return jo.encodePrettily();
-  }
-
-  private static int nextFreePort() {
-    int maxTries = 10000;
-    int port = ThreadLocalRandom.current().nextInt(49152, 65535);
-    while (true) {
-      if (isLocalPortFree(port)) {
-        return port;
-      } else {
-        port = ThreadLocalRandom.current().nextInt(49152, 65535);
-      }
-      maxTries--;
-      if (maxTries == 0) {
-        return 8081;
-      }
-    }
-  }
-
-  private static boolean isLocalPortFree(int port) {
-    try {
-      new ServerSocket(port).close();
-      return true;
-    } catch (IOException e) {
-      return false;
-    }
   }
 }
