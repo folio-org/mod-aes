@@ -6,17 +6,17 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.folio.aes.util.AesUtils;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.RoutingContext;
 
 public class AesService {
 
-  private static Logger logger = LoggerFactory.getLogger(AesService.class);
+  private static Logger logger = LogManager.getLogger();
 
   private RuleService ruleService;
   private QueueService queueService;
@@ -42,7 +42,7 @@ public class AesService {
           skip = true;
         }
       } catch (Exception e) {
-        logger.warn("Invalid Okapi token format: " + token);
+        logger.warn("Invalid Okapi token format: {}", token);
         skip = true;
       }
     }
@@ -103,7 +103,7 @@ public class AesService {
       try {
         bodyJsonObject = new JsonObject(bodyString);
       } catch (Exception e) {
-        logger.warn("Failed to convert to JSON: " + ctx.getBodyAsString());
+        logger.warn("Failed to convert to JSON: {}", ctx::getBodyAsString);
         bodyJsonObject = null;
       }
     }

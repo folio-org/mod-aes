@@ -8,14 +8,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.folio.aes.model.RoutingRule;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
@@ -25,7 +25,7 @@ import io.vertx.ext.web.client.WebClient;
  */
 public class RuleServiceConfigImpl implements RuleService {
 
-  private static Logger logger = LoggerFactory.getLogger(RuleServiceConfigImpl.class);
+  private static Logger logger = LogManager.getLogger();
 
   private static final long CACHE_PERIOD = 1 * 60 * 1000L; // one minute
 
@@ -53,12 +53,12 @@ public class RuleServiceConfigImpl implements RuleService {
     if (cache != null && (System.currentTimeMillis() - cache.timestamp < CACHE_PERIOD)) {
       cf.complete(cache.rules);
     } else {
-      logger.info("Refresh routing rules for tenant " + tenant);
+      logger.info("Refresh routing rules for tenant {}", tenant);
       getFreshRules(okapiUrl, tenant, token)
         .thenAccept(rules -> {
           cachedRules.put(tenant, new CachedRoutingRules(System.currentTimeMillis(), rules));
           cf.complete(rules);
-          logger.info("Refreshed rules: " + rules);
+          logger.info("Refreshed rules: {}", rules);
         }).handle((res, ex) -> {
           if (ex != null) {
             logger.warn(ex);

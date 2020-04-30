@@ -1,5 +1,7 @@
 package org.folio.aes.service;
 
+import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -7,12 +9,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.KafkaException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
 import io.vertx.kafka.client.producer.KafkaProducer;
 
 /**
@@ -45,7 +46,7 @@ import io.vertx.kafka.client.producer.KafkaProducer;
  */
 public class QueueServiceKafkaImpl implements QueueService {
 
-  private static Logger logger = LoggerFactory.getLogger(QueueServiceKafkaImpl.class);
+  private static Logger logger = LogManager.getLogger();
 
   private Vertx vertx;
   private String defaultKafkaUrl;
@@ -73,10 +74,10 @@ public class QueueServiceKafkaImpl implements QueueService {
       .thenCompose(p -> CompletableFuture
         .runAsync(() -> p.write(kafkaService.createProducerRecord(topic, msg), res -> {
           if (res.succeeded()) {
-            logger.info("Send OK: " + msg);
+            logger.info("Send OK: {}", msg);
             cf.complete(null);
           } else {
-            logger.warn("Send not OK: " + msg);
+            logger.warn("Send not OK: {}", msg);
             cf.completeExceptionally(res.cause());
           }
         })))
@@ -97,9 +98,9 @@ public class QueueServiceKafkaImpl implements QueueService {
     producers.forEach((k, v) -> futures.add(CompletableFuture
       .runAsync(() -> v.close(ar -> {
         if (ar.succeeded()) {
-          logger.info(k + " stopped.");
+          logger.info("{} stopped.", k);
         } else {
-          logger.warn(k + " failed to stop.", ar.cause());
+          logger.warn("{} failed to stop.", k, ar.cause());
           throw new KafkaException(ar.cause());
         }
       }))));
@@ -108,11 +109,11 @@ public class QueueServiceKafkaImpl implements QueueService {
   }
 
   private CompletableFuture<KafkaProducer<String, String>> getOrCreateProducer(String kafkaUrl) {
-    logger.debug("Get Kafka producer for " + kafkaUrl);
+    logger.debug("Get Kafka producer for {}", kafkaUrl);
     CompletableFuture<KafkaProducer<String, String>> cf = new CompletableFuture<>();
     KafkaProducer<String, String> producer = producers.get(kafkaUrl);
     if (producer != null) {
-      logger.debug("Return an existing producer " + System.identityHashCode(producer));
+      logger.debug("Return an existing producer {}", System.identityHashCode(producer));
       cf.complete(producer);
     } else {
       CompletableFuture
@@ -121,7 +122,7 @@ public class QueueServiceKafkaImpl implements QueueService {
           KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
           // just in case that a duplicate is created due to competition
           if (p != null) {
-            logger.warn("Close a producer duplicate " + System.identityHashCode(newProducer));
+            logger.warn("Close a producer duplicate {}", System.identityHashCode(newProducer));
             CompletableFuture.runAsync(newProducer::close);
             cf.complete(p);
           } else {
@@ -140,12 +141,12 @@ public class QueueServiceKafkaImpl implements QueueService {
   }
 
   private KafkaProducer<String, String> createProducer(String kafkaUrl) {
-    logger.info("Create Kafka producer for " + kafkaUrl);
+    logger.info("Create Kafka producer for {}", kafkaUrl);
     Properties config = new Properties();
-    config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
+    config.put(BOOTSTRAP_SERVERS_CONFIG, kafkaUrl);
     KafkaProducer<String, String> producer = kafkaService.createProducer(vertx, config);
     producer.exceptionHandler(e -> logger.warn(e));
-    logger.warn("returning producer");
+    logger.debug("returning producer");
     return producer;
   }
 

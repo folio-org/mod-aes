@@ -2,6 +2,8 @@ package org.folio.aes;
 
 import static org.folio.aes.util.AesConstants.*;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.folio.aes.service.AesService;
 import org.folio.aes.service.KafkaService;
 import org.folio.aes.service.QueueServiceKafkaImpl;
@@ -9,20 +11,18 @@ import org.folio.aes.service.QueueServiceLogImpl;
 import org.folio.aes.service.RuleServiceConfigImpl;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 
 public class AesVerticle extends AbstractVerticle {
 
-  private static final Logger logger = LoggerFactory.getLogger(AesVerticle.class);
+  private static final Logger logger = LogManager.getLogger();
 
   private AesService aesService = new AesService();
 
   @Override
-  public void start(Future<Void> fut) throws Exception {
+  public void start(Promise<Void> promise) throws Exception {
 
     int port = Integer.parseInt(
       System.getProperty("port",
@@ -46,33 +46,33 @@ public class AesVerticle extends AbstractVerticle {
     // filter mapping
     router.route("/*").handler(aesService::prePostHandler);
 
-    vertx.createHttpServer().requestHandler(router::accept).listen(port, rs -> {
+    vertx.createHttpServer().requestHandler(router).listen(port, rs -> {
       if (rs.succeeded()) {
-        fut.complete();
+        promise.complete();
       } else {
-        fut.fail(rs.cause());
+        promise.fail(rs.cause());
       }
     });
 
-    logger.info("HTTP server started on port " + port);
+    logger.info("HTTP server started on port {}", port);
   }
 
   @Override
-  public void stop(Future<Void> fut) {
+  public void stop(Promise<Void> promise) {
     if (aesService != null) {
       aesService.stop()
-        .thenRun(fut::complete)
+        .thenRun(promise::complete)
         .handle((res, ex) -> {
           if (ex != null) {
             logger.warn(ex);
-            fut.fail(ex);
+            promise.fail(ex);
             return ex;
           }
-          fut.complete();
+          promise.complete();
           return res;
         });
     } else {
-      fut.complete();
+      promise.complete();
     }
   }
 

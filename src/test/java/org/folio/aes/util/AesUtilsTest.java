@@ -1,6 +1,10 @@
 package org.folio.aes.util;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -10,8 +14,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.folio.aes.util.AesUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
@@ -103,16 +106,19 @@ public class AesUtilsTest {
     assertEquals("diku", jo.getValue("tenant"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testDecodeOkapiTokenInvalidTokenFomrat() {
-    String token = "abc";
-    AesUtils.decodeOkapiToken(token);
+    final String token = "abc";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> AesUtils.decodeOkapiToken(token));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testDecodeOkapiTokenInvalidJson() {
-    String token = "abc.def";
-    AesUtils.decodeOkapiToken(token);
+    final String token = "abc.def";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> AesUtils.decodeOkapiToken(token));
   }
-
 }
