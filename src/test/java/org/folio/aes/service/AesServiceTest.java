@@ -30,7 +30,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.vertx.core.MultiMap;
@@ -136,7 +135,7 @@ public class AesServiceTest {
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
     cf.completeExceptionally(new RuntimeException("abc"));
-    when(ruleService.getRules(Mockito.any(), any(), any())).thenReturn(cf);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
