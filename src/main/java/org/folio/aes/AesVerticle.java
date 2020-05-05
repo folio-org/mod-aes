@@ -12,6 +12,7 @@ import org.folio.aes.service.RuleServiceConfigImpl;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 
@@ -46,7 +47,10 @@ public class AesVerticle extends AbstractVerticle {
     // filter mapping
     router.route("/*").handler(aesService::prePostHandler);
 
-    vertx.createHttpServer().requestHandler(router).listen(port, rs -> {
+    HttpServerOptions options = new HttpServerOptions()
+        .setCompressionSupported(true)
+        .setDecompressionSupported(true);
+    vertx.createHttpServer(options).requestHandler(router).listen(port, rs -> {
       if (rs.succeeded()) {
         promise.complete();
       } else {
