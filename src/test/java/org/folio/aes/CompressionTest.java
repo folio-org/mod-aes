@@ -9,7 +9,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.folio.aes.test.Utils.nextFreePort;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -97,16 +97,11 @@ class CompressionTest {
 
   @AfterEach
   @DisplayName("Shutdown")
-  void tearDown(Vertx vertx, VertxTestContext testContext, TestInfo testInfo) {
+  void tearDown(Vertx vertx, TestInfo testInfo) {
     // The AES service is stopped when the verticle is stopped, so we need the AES service mock
-    // to return a CompletableFuture so that there won't be an NPE. This also requires manual
-    // undeployment instead of letting the Vert.x extension take care of it, since Mockito
-    // will think the stop mocking stub is unnecessary as stop is called after Mockito does
-    // its stubbing verification. We could use a lenient stub to solve this, but since we
-    // explicitly deploy, we may as well explicitly undeploy.
-    when(aesService.stop()).thenReturn(completedFuture(null));
-
-    vertx.undeploy(vertx.deploymentIDs().iterator().next(), testContext.completing());
+    // to return a CompletableFuture so that there won't be an NPE. We make it lenient since it
+    // may not be called by the time the MockitoExtension checks for unused stubs.
+    lenient().when(aesService.stop()).thenReturn(completedFuture(null));
 
     log.info("Finished: {}", testInfo.getDisplayName());
   }
