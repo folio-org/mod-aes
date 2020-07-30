@@ -99,7 +99,8 @@ public class AesService {
     data.put(MSG_PARAMS, AesUtils.convertMultiMapToJsonObject(ctx.request().params()));
     String bodyString = ctx.getBodyAsString();
     JsonObject bodyJsonObject = null;
-    if (ctx.request().headers().get("Content-Type").toLowerCase().contains("json")) {
+    final String contentType = ctx.request().headers().get("Content-Type");
+    if (contentType != null && contentType.toLowerCase().contains("json")) {
       try {
         bodyJsonObject = new JsonObject(bodyString);
       } catch (Exception e) {

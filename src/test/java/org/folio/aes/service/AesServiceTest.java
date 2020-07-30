@@ -212,6 +212,41 @@ public class AesServiceTest {
     verifyNoMoreInteractions(queueService);
   }
 
+  @Test
+  public void testSendWithoutContentType(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+      @Mock HttpServerResponse response) throws InterruptedException {
+    String topicA = "ta";
+    String topicB = "tb";
+    MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+    headers.add(OKAPI_TENANT, "abc");
+    headers.add(OKAPI_TOKEN,
+        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    when(ctx.request()).thenReturn(request);
+    when(ctx.response()).thenReturn(response);
+    when(request.headers()).thenReturn(headers);
+    when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
+    when(ctx.getBodyAsString()).thenReturn("");
+    Collection<RoutingRule> rules = new ArrayList<>();
+    rules.add(new RoutingRule("$..*", topicA));
+    rules.add(new RoutingRule("$..*", topicB));
+    rules.add(new RoutingRule("$.xyz", topicB));
+    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
+    cf.complete(rules);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    aesService.prePostHandler(ctx);
+    long start = System.currentTimeMillis() + WAIT_TS;
+    await().until(() -> {
+      return System.currentTimeMillis() > start;
+    });
+    verify(ruleService, times(1)).getRules(any(), any(), any());
+    ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+    verify(queueService).send(eq(topicA), argument.capture());
+    checkMsg(argument.getValue());
+    verify(queueService).send(eq(topicB), argument.capture());
+    checkMsg(argument.getValue());
+    verifyNoMoreInteractions(queueService);
+  }
+
   private static void checkMsg(String content) {
     JsonObject msg = new JsonObject(content);
     assertTrue(msg.containsKey(MSG_PATH));
