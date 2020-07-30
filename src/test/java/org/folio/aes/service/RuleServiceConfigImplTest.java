@@ -28,7 +28,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 
 @ExtendWith(VertxExtension.class)
-public class RuleServiceConfigImplTest {
+class RuleServiceConfigImplTest {
 
   private static int port;
   private static String tenant = "tenant";
@@ -64,7 +64,7 @@ public class RuleServiceConfigImplTest {
   }
 
   @Test
-  public void testGetConfig() throws Exception {
+  void testGetConfig() throws Exception {
     String okapiUrl = "http://localhost:" + port + CONFIG_ROUTING_QUERY;
     CompletableFuture<Collection<RoutingRule>> cf = ruleService.getRules(okapiUrl, tenant, token);
     Collection<RoutingRule> rules = cf.get();
