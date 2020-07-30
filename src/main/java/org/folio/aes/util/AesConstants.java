@@ -1,5 +1,7 @@
 package org.folio.aes.util;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -18,8 +20,9 @@ public class AesConstants {
   // mod-config related
   public static final String CONFIG_CONFIGS = "configs";
   public static final String CONFIG_VALUE = "value";
-  public static final String CONFIG_ROUTING_QUREY = String
-    .format("/configurations/entries?query=(module=AES and configName=routing_rules)&limit=%d", Integer.MAX_VALUE);
+  public static final String CONFIG_QUERY_CQL = encode("(module=AES and configName=routing_rules)");
+  public static final String CONFIG_ROUTING_QUERY = String
+    .format("/configurations/entries?query=%s&limit=%d", CONFIG_QUERY_CQL, Integer.MAX_VALUE);
   public static final String CONFIG_ROUTING_CRITERIA = "criteria";
   public static final String CONFIG_ROUTING_TARGET = "target";
 
@@ -57,4 +60,13 @@ public class AesConstants {
     JsonPath.compile("$..username"),
     JsonPath.compile("$..requester"),
     JsonPath.compile("$..user")));
+
+  private static final String encode(String value) {
+    try {
+      return URLEncoder.encode(value, "UTF-8");
+    } catch (UnsupportedEncodingException e) {
+      // Should never happen with a compliant JVM
+      return value;
+    }
+  }
 }
