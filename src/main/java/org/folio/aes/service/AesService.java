@@ -55,7 +55,7 @@ public class AesService {
     String msg = data.encodePrettily();
     logger.trace(msg);
 
-    String okapiUrl = headers.get(OKAPI_URL) + CONFIG_ROUTING_QUREY;
+    String okapiUrl = headers.get(OKAPI_URL) + CONFIG_ROUTING_QUERY;
     String tenant = headers.get(OKAPI_TENANT);
 
     // Run it asynchronously since OKAPI does not care response
