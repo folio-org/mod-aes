@@ -39,7 +39,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 
 @ExtendWith(MockitoExtension.class)
-public class AesServiceTest {
+class AesServiceTest {
 
   private static long WAIT_TS = 1000;
 
@@ -53,13 +53,13 @@ public class AesServiceTest {
   private AesService aesService;
 
   @Test
-  public void testStop() throws Exception {
+  void testStop() throws Exception {
     aesService.stop();
     verify(queueService, times(1)).stop();
   }
 
   @Test
-  public void testSendSkipFilterId(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+  void testSendSkipFilterId(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_AES_FILTER_ID, "true");
@@ -72,7 +72,7 @@ public class AesServiceTest {
   }
 
   @Test
-  public void testSendSkipBadToken(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+  void testSendSkipBadToken(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TOKEN, "abc");
@@ -85,7 +85,7 @@ public class AesServiceTest {
   }
 
   @Test
-  public void testSendSkipInternalAuth(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+  void testSendSkipInternalAuth(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TOKEN,
@@ -99,7 +99,7 @@ public class AesServiceTest {
   }
 
   @Test
-  public void testSendTenantNone(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+  void testSendTenantNone(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add("Content-Type", "application/json");
@@ -124,7 +124,7 @@ public class AesServiceTest {
   }
 
   @Test
-  public void testSendRuleException(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+  void testSendRuleException(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TENANT, "abc");
@@ -146,7 +146,7 @@ public class AesServiceTest {
   }
 
   @Test
-  public void testSendWithoutRules(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+  void testSendWithoutRules(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
     String defaultTopic = "abc_default";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
@@ -177,7 +177,7 @@ public class AesServiceTest {
   }
 
   @Test
-  public void testSend(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+  void testSend(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
     String topicA = "ta";
     String topicB = "tb";
@@ -191,6 +191,41 @@ public class AesServiceTest {
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBodyAsString()).thenReturn("{}");
+    Collection<RoutingRule> rules = new ArrayList<>();
+    rules.add(new RoutingRule("$..*", topicA));
+    rules.add(new RoutingRule("$..*", topicB));
+    rules.add(new RoutingRule("$.xyz", topicB));
+    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
+    cf.complete(rules);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    aesService.prePostHandler(ctx);
+    long start = System.currentTimeMillis() + WAIT_TS;
+    await().until(() -> {
+      return System.currentTimeMillis() > start;
+    });
+    verify(ruleService, times(1)).getRules(any(), any(), any());
+    ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+    verify(queueService).send(eq(topicA), argument.capture());
+    checkMsg(argument.getValue());
+    verify(queueService).send(eq(topicB), argument.capture());
+    checkMsg(argument.getValue());
+    verifyNoMoreInteractions(queueService);
+  }
+
+  @Test
+  void testSendWithoutContentType(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+      @Mock HttpServerResponse response) throws InterruptedException {
+    String topicA = "ta";
+    String topicB = "tb";
+    MultiMap headers = MultiMap.caseInsensitiveMultiMap();
+    headers.add(OKAPI_TENANT, "abc");
+    headers.add(OKAPI_TOKEN,
+        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    when(ctx.request()).thenReturn(request);
+    when(ctx.response()).thenReturn(response);
+    when(request.headers()).thenReturn(headers);
+    when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
+    when(ctx.getBodyAsString()).thenReturn("");
     Collection<RoutingRule> rules = new ArrayList<>();
     rules.add(new RoutingRule("$..*", topicA));
     rules.add(new RoutingRule("$..*", topicB));
