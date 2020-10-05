@@ -42,6 +42,11 @@ import io.vertx.junit5.web.WebClientOptionsInject;
  * @author mreno
  *
  */
+// We'll need to fix the deprecation use in this test when we move to Vert.x 4.0. These WebClient
+// classes are being moved to the reactiverse:
+//   * https://github.com/reactiverse/reactiverse-junit5-extensions/
+// There is nothing we can do about it now since the new code is not released yet.
+@SuppressWarnings("deprecation")
 @ExtendWith({VertxExtension.class, VertxWebClientExtension.class, MockitoExtension.class})
 class CompressionTest {
   private static Logger log = LogManager.getLogger();
