@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,9 +16,10 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
-public class AesUtilsTest {
+class AesUtilsTest {
 
   private static final String jsonpathTestContent;
   static {
@@ -32,7 +32,7 @@ public class AesUtilsTest {
   }
 
   @Test
-  public void testCheckJsonPaths() {
+  void testCheckJsonPaths() {
     String goodJsonPath = "$.store.book[?(@.price < 10)]";
     String badJsonPath = "$.store.book[?(@.price > 100)]";
     Set<String> jsonPaths = new HashSet<>(Arrays.asList(goodJsonPath, badJsonPath));
@@ -42,7 +42,7 @@ public class AesUtilsTest {
   }
 
   @Test
-  public void testConvertMultiMapToJsonObject() {
+  void testConvertMultiMapToJsonObject() {
     MultiMap map = MultiMap.caseInsensitiveMultiMap();
     map.add("a", "1 a");
     map.add("a", "2 a");
@@ -56,7 +56,7 @@ public class AesUtilsTest {
   }
 
   @Test
-  public void testMaskPassword() {
+  void testMaskPassword() {
     String login = "{\"username\":\"admin\",\"password\":\"secret\"}";
     String update = "{\"username\":\"admin\",\"userId\":\"123\",\"password\":\"before\",\"newPassword\":\"after\",\"id\":\"456\"}";
     for (String s : Arrays.asList(login, update)) {
@@ -76,29 +76,28 @@ public class AesUtilsTest {
   }
 
   @Test
-  public void testContainsPII() {
-    String user = "{\"username\":\"jhandey\",\"id\":\"7261ecaae3a74dc68b468e12a70b1aec\",\"active\":true,\"type\":\"patron\",\"patronGroup\":\"4bb563d9-3f9d-4e1e-8d1d-04e75666d68f\",\"meta\":{\"creation_date\":\"2016-11-05T0723\",\"last_login_date\":\"\"},\"personal\":{\"lastName\":\"Handey\",\"firstName\":\"Jack\",\"email\":\"jhandey@biglibrary.org\",\"phone\":\"2125551212\"}}";
+  void testContainsPII() {
+    final JsonObject user = new JsonObject("{\"username\":\"jhandey\",\"id\":\"7261ecaae3a74dc68b468e12a70b1aec\",\"active\":true,\"type\":\"patron\",\"patronGroup\":\"4bb563d9-3f9d-4e1e-8d1d-04e75666d68f\",\"meta\":{\"creation_date\":\"2016-11-05T0723\",\"last_login_date\":\"\"},\"personal\":{\"lastName\":\"Handey\",\"firstName\":\"Jack\",\"email\":\"jhandey@biglibrary.org\",\"phone\":\"2125551212\"}}");
 
     assertTrue(AesUtils.containsPII(user));
   }
 
   @Test
-  public void testContainsPIINoPII() {
-    String item = "{\"id\":\"0b96a642-5e7f-452d-9cae-9cee66c9a892\",\"title\":\"Uprooted\",\"callNumber\":\"D11.J54 A3 2011\",\"barcode\":\"645398607547\",\"status\":{\"name\":\"Available\"},\"materialType\":{\"id\":\"fcf3d3dc-b27f-4ce4-a530-542ea53cacb5\",\"name\":\"Book\"},\"permanentLoanType\":{\"id\":\"8e570d0d-931c-43d1-9ca1-221e693ea8d2\",\"name\":\"Can Circulate\"},\"temporaryLoanType\":{\"id\":\"74c25903-4019-4d8a-9360-5cb7761f44e5\",\"name\":\"Course Reserve\"},\"permanentLocation\":{\"id\":\"d9cd0bed-1b49-4b5e-a7bd-064b8d177231\",\"name\":\"Main Library\"}}";
+  void testContainsPIINoPII() {
+    final JsonObject item = new JsonObject("{\"id\":\"0b96a642-5e7f-452d-9cae-9cee66c9a892\",\"title\":\"Uprooted\",\"callNumber\":\"D11.J54 A3 2011\",\"barcode\":\"645398607547\",\"status\":{\"name\":\"Available\"},\"materialType\":{\"id\":\"fcf3d3dc-b27f-4ce4-a530-542ea53cacb5\",\"name\":\"Book\"},\"permanentLoanType\":{\"id\":\"8e570d0d-931c-43d1-9ca1-221e693ea8d2\",\"name\":\"Can Circulate\"},\"temporaryLoanType\":{\"id\":\"74c25903-4019-4d8a-9360-5cb7761f44e5\",\"name\":\"Course Reserve\"},\"permanentLocation\":{\"id\":\"d9cd0bed-1b49-4b5e-a7bd-064b8d177231\",\"name\":\"Main Library\"}}");
 
     assertFalse(AesUtils.containsPII(item));
   }
 
   @Test
-  public void testContainsPIIUserList() throws Exception {
-    String users = new String(Files.readAllBytes(Paths.get("src/test/resources/data/users.json")),
-      StandardCharsets.UTF_8);
+  void testContainsPIIUserList() throws Exception {
+    final JsonObject users = new JsonObject(Buffer.buffer(Files.readAllBytes(Paths.get("src/test/resources/data/users.json"))));
 
     assertTrue(AesUtils.containsPII(users));
   }
 
   @Test
-  public void testDecodeOkapiToken() {
+  void testDecodeOkapiToken() {
     String token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJkaWt1X3VzZXIiLCJ1c2VyX2lkIjoiYWJjIiwidGVuYW50IjoiZGlrdSJ9.eMu6_Gjjo6G6TeTS3y--GmQGTtWryJtKznpGUUwpa0rDDwY1xLBDTQoHv06_mXYs2GyPOoeERUM_G_BEvpMZcA";
     JsonObject jo = AesUtils.decodeOkapiToken(token);
     assertEquals("diku_user", jo.getValue("sub"));
@@ -107,7 +106,7 @@ public class AesUtilsTest {
   }
 
   @Test
-  public void testDecodeOkapiTokenInvalidTokenFomrat() {
+  void testDecodeOkapiTokenInvalidTokenFomrat() {
     final String token = "abc";
     assertThrows(
         IllegalArgumentException.class,
@@ -115,7 +114,7 @@ public class AesUtilsTest {
   }
 
   @Test
-  public void testDecodeOkapiTokenInvalidJson() {
+  void testDecodeOkapiTokenInvalidJson() {
     final String token = "abc.def";
     assertThrows(
         IllegalArgumentException.class,

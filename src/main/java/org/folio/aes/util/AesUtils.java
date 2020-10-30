@@ -70,6 +70,16 @@ public class AesUtils {
     return jo;
   }
 
+  public static void maskPassword(Object o) {
+    if (o instanceof JsonObject) {
+      maskPassword((JsonObject) o);
+    } else {
+      for (Object child : (JsonArray) o) {
+        maskPassword(child);
+      }
+    }
+  }
+
   /**
    * Mask password.
    *
@@ -83,10 +93,22 @@ public class AesUtils {
     }
   }
 
-  public static boolean containsPII(String bodyString) {
+  public static boolean containsPII(Object o) {
+    if (o instanceof JsonObject) {
+      return containsPII((JsonObject) o);
+    } else {
+      for (Object child : (JsonArray) o) {
+        if (containsPII(child)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+
+  public static boolean containsPII(JsonObject body) {
     for (final JsonPath jp : PII_JSON_PATHS) {
-      final List<String> pathList = jp.read(bodyString,
-        PII_JSON_PATH_CONFIG);
+      final List<String> pathList = jp.read(body.toString(), PII_JSON_PATH_CONFIG);
       if (!pathList.isEmpty()) {
         return true;
       }

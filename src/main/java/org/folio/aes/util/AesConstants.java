@@ -33,6 +33,8 @@ public class AesConstants {
   public static final String OKAPI_TOKEN_SUB = "sub";
   public static final String OKAPI_TOKEN_AUTH_MOD = "_AUTHZ_MODULE_";
   public static final String OKAPI_AES_FILTER_ID = "x-okapi-aes-filter-id";
+  public static final String OKAPI_HANDLER_RESULT = "x-okapi-handler-result";
+  public static final String CONTENT_TYPE = "content-type";
 
   // topics
   public static final String TENANT_NONE = "tenant_none";
