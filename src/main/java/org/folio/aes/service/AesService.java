@@ -22,6 +22,7 @@ public class AesService {
   private QueueService queueService;
 
   public CompletableFuture<Void> stop() {
+    getRuleService().stop();
     return getQueueService().stop();
   }
 
