@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 class AesUtilsTest {
@@ -60,16 +61,42 @@ class AesUtilsTest {
     String login = "{\"username\":\"admin\",\"password\":\"secret\"}";
     String update = "{\"username\":\"admin\",\"userId\":\"123\",\"password\":\"before\",\"newPassword\":\"after\",\"id\":\"456\"}";
     for (String s : Arrays.asList(login, update)) {
-      JsonObject beforeMask = new JsonObject(s);
-      JsonObject afterMask = new JsonObject(s);
+      Object beforeMask = new JsonObject(s);
+      Object afterMask = new JsonObject(s);
       AesUtils.maskPassword(afterMask);
-      assertEquals(beforeMask.size(), afterMask.size());
-      afterMask.forEach(entry -> {
+      assertEquals(((JsonObject) beforeMask).size(), ((JsonObject) afterMask).size());
+      ((JsonObject) afterMask).forEach(entry -> {
         if (entry.getKey().contains("assword")) {
-          assertNotEquals(entry.getValue().toString(), beforeMask.getString(entry.getKey()));
+          assertNotEquals(entry.getValue().toString(),
+              ((JsonObject) beforeMask).getString(entry.getKey()));
           assertEquals(AesConstants.MSG_PW_MASK, entry.getValue().toString());
         } else {
-          assertEquals(entry.getValue().toString(), beforeMask.getString(entry.getKey()));
+          assertEquals(entry.getValue().toString(),
+              ((JsonObject) beforeMask).getString(entry.getKey()));
+        }
+      });
+    }
+  }
+
+  @Test
+  void testMaskPasswordWithArray() {
+    String login = "[{\"username\":\"admin\",\"password\":\"secret\"}]";
+    String update = "[{\"username\":\"admin\",\"userId\":\"123\",\"password\":\"before\",\"newPassword\":\"after\",\"id\":\"456\"}]";
+    for (String s : Arrays.asList(login, update)) {
+      Object beforeMask = new JsonArray(s);
+      Object afterMask = new JsonArray(s);
+      AesUtils.maskPassword(afterMask);
+      assertEquals(((JsonArray) beforeMask).size(), ((JsonArray) afterMask).size());
+      assertEquals(((JsonArray) beforeMask).getJsonObject(0).size(),
+          ((JsonArray) afterMask).getJsonObject(0).size());
+      ((JsonArray) afterMask).getJsonObject(0).forEach(entry -> {
+        if (entry.getKey().contains("assword")) {
+          assertNotEquals(entry.getValue().toString(),
+              ((JsonArray) beforeMask).getJsonObject(0).getString(entry.getKey()));
+          assertEquals(AesConstants.MSG_PW_MASK, entry.getValue().toString());
+        } else {
+          assertEquals(entry.getValue().toString(),
+              ((JsonArray) beforeMask).getJsonObject(0).getString(entry.getKey()));
         }
       });
     }
@@ -77,14 +104,28 @@ class AesUtilsTest {
 
   @Test
   void testContainsPII() {
-    final JsonObject user = new JsonObject("{\"username\":\"jhandey\",\"id\":\"7261ecaae3a74dc68b468e12a70b1aec\",\"active\":true,\"type\":\"patron\",\"patronGroup\":\"4bb563d9-3f9d-4e1e-8d1d-04e75666d68f\",\"meta\":{\"creation_date\":\"2016-11-05T0723\",\"last_login_date\":\"\"},\"personal\":{\"lastName\":\"Handey\",\"firstName\":\"Jack\",\"email\":\"jhandey@biglibrary.org\",\"phone\":\"2125551212\"}}");
+    final Object user = new JsonObject("{\"username\":\"jhandey\",\"id\":\"7261ecaae3a74dc68b468e12a70b1aec\",\"active\":true,\"type\":\"patron\",\"patronGroup\":\"4bb563d9-3f9d-4e1e-8d1d-04e75666d68f\",\"meta\":{\"creation_date\":\"2016-11-05T0723\",\"last_login_date\":\"\"},\"personal\":{\"lastName\":\"Handey\",\"firstName\":\"Jack\",\"email\":\"jhandey@biglibrary.org\",\"phone\":\"2125551212\"}}");
 
     assertTrue(AesUtils.containsPII(user));
   }
 
   @Test
   void testContainsPIINoPII() {
-    final JsonObject item = new JsonObject("{\"id\":\"0b96a642-5e7f-452d-9cae-9cee66c9a892\",\"title\":\"Uprooted\",\"callNumber\":\"D11.J54 A3 2011\",\"barcode\":\"645398607547\",\"status\":{\"name\":\"Available\"},\"materialType\":{\"id\":\"fcf3d3dc-b27f-4ce4-a530-542ea53cacb5\",\"name\":\"Book\"},\"permanentLoanType\":{\"id\":\"8e570d0d-931c-43d1-9ca1-221e693ea8d2\",\"name\":\"Can Circulate\"},\"temporaryLoanType\":{\"id\":\"74c25903-4019-4d8a-9360-5cb7761f44e5\",\"name\":\"Course Reserve\"},\"permanentLocation\":{\"id\":\"d9cd0bed-1b49-4b5e-a7bd-064b8d177231\",\"name\":\"Main Library\"}}");
+    final Object item = new JsonObject("{\"id\":\"0b96a642-5e7f-452d-9cae-9cee66c9a892\",\"title\":\"Uprooted\",\"callNumber\":\"D11.J54 A3 2011\",\"barcode\":\"645398607547\",\"status\":{\"name\":\"Available\"},\"materialType\":{\"id\":\"fcf3d3dc-b27f-4ce4-a530-542ea53cacb5\",\"name\":\"Book\"},\"permanentLoanType\":{\"id\":\"8e570d0d-931c-43d1-9ca1-221e693ea8d2\",\"name\":\"Can Circulate\"},\"temporaryLoanType\":{\"id\":\"74c25903-4019-4d8a-9360-5cb7761f44e5\",\"name\":\"Course Reserve\"},\"permanentLocation\":{\"id\":\"d9cd0bed-1b49-4b5e-a7bd-064b8d177231\",\"name\":\"Main Library\"}}");
+
+    assertFalse(AesUtils.containsPII(item));
+  }
+
+  @Test
+  void testContainsPIIWithJsonArray() {
+    final Object user = new JsonArray("[{\"username\":\"jhandey\",\"id\":\"7261ecaae3a74dc68b468e12a70b1aec\",\"active\":true,\"type\":\"patron\",\"patronGroup\":\"4bb563d9-3f9d-4e1e-8d1d-04e75666d68f\",\"meta\":{\"creation_date\":\"2016-11-05T0723\",\"last_login_date\":\"\"},\"personal\":{\"lastName\":\"Handey\",\"firstName\":\"Jack\",\"email\":\"jhandey@biglibrary.org\",\"phone\":\"2125551212\"}}]");
+
+    assertTrue(AesUtils.containsPII(user));
+  }
+
+  @Test
+  void testContainsPIINoPIIWithJsonArray() {
+    final Object item = new JsonArray("[{\"id\":\"0b96a642-5e7f-452d-9cae-9cee66c9a892\",\"title\":\"Uprooted\",\"callNumber\":\"D11.J54 A3 2011\",\"barcode\":\"645398607547\",\"status\":{\"name\":\"Available\"},\"materialType\":{\"id\":\"fcf3d3dc-b27f-4ce4-a530-542ea53cacb5\",\"name\":\"Book\"},\"permanentLoanType\":{\"id\":\"8e570d0d-931c-43d1-9ca1-221e693ea8d2\",\"name\":\"Can Circulate\"},\"temporaryLoanType\":{\"id\":\"74c25903-4019-4d8a-9360-5cb7761f44e5\",\"name\":\"Course Reserve\"},\"permanentLocation\":{\"id\":\"d9cd0bed-1b49-4b5e-a7bd-064b8d177231\",\"name\":\"Main Library\"}}]");
 
     assertFalse(AesUtils.containsPII(item));
   }

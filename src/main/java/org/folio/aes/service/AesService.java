@@ -126,7 +126,7 @@ public class AesService {
       try {
         bodyJson = bodyBuffer.toJson();
       } catch (Exception e) {
-        logger.warn("Failed to convert to JSON: {}", ctx::getBodyAsString);
+        logger.warn("Failed to convert to JSON: {}", bodyBuffer::toString);
         bodyJson = null;
       }
     }
