@@ -29,11 +29,11 @@ public class RuleServiceConfigImpl implements RuleService {
 
   private static final long CACHE_PERIOD = 1 * 60 * 1000L; // one minute
 
-  private Vertx vertx;
+  private final WebClient client;
   private ConcurrentMap<String, CachedRoutingRules> cachedRules = new ConcurrentHashMap<>();
 
   public RuleServiceConfigImpl(Vertx vertx) {
-    this.vertx = vertx;
+    this.client = WebClient.create(vertx);
   }
 
   private static class CachedRoutingRules {
@@ -71,9 +71,14 @@ public class RuleServiceConfigImpl implements RuleService {
     return cf;
   }
 
+  @Override
+  public void stop() {
+    client.close();
+  }
+
   private CompletableFuture<Collection<RoutingRule>> getFreshRules(String okapiUrl, String tenant, String token) {
     CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    HttpRequest<Buffer> request = WebClient.create(vertx).getAbs(okapiUrl);
+    HttpRequest<Buffer> request = client.getAbs(okapiUrl);
     MultiMap headers = request.headers().set("Accept", "application/json").set(OKAPI_AES_FILTER_ID, "true");
     if (tenant != null) {
       headers.set(OKAPI_TENANT, tenant);

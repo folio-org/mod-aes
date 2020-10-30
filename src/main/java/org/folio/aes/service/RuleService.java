@@ -17,4 +17,5 @@ public interface RuleService {
    */
   CompletableFuture<Collection<RoutingRule>> getRules(String okapiUrl, String tenant, String token);
 
+  void stop();
 }
