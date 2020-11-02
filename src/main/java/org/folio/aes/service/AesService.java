@@ -19,12 +19,12 @@ import static org.folio.aes.util.AesConstants.TENANT_NONE;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.aes.util.AesUtils;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
@@ -37,7 +37,7 @@ public class AesService {
   private RuleService ruleService;
   private QueueService queueService;
 
-  public CompletableFuture<Void> stop() {
+  public Future<Void> stop() {
     getRuleService().stop();
     return getQueueService().stop();
   }
@@ -76,12 +76,12 @@ public class AesService {
     String tenant = headers.get(OKAPI_TENANT);
 
     // Run it asynchronously since OKAPI does not care response
-    CompletableFuture.runAsync(() -> {
+    ctx.vertx().runOnContext(v -> {
       if (tenant == null) {
         // edge case: always send a copy for no-tenant request
         getQueueService().send(TENANT_NONE, msg);
       } else {
-        getRuleService().getRules(okapiUrl, tenant, token).thenAccept(rules -> {
+        getRuleService().getRules(okapiUrl, tenant, token).map(rules -> {
           if (rules.isEmpty()) {
             // send all messages to default topic if no rules defined
             getQueueService().send(tenant + "_default", msg);
@@ -95,13 +95,12 @@ public class AesService {
               }
             });
           }
-        }).handle((res, ex) -> {
+          return null;
+        }).otherwise(ex -> {
           if (ex != null) {
             logger.warn(ex);
-            return ex;
-          } else {
-            return res;
           }
+          return null;
         });
       }
     });

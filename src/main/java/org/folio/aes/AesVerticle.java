@@ -1,6 +1,6 @@
 package org.folio.aes;
 
-import static org.folio.aes.util.AesConstants.*;
+import static org.folio.aes.util.AesConstants.MOD_NAME;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,19 +65,15 @@ public class AesVerticle extends AbstractVerticle {
   public void stop(Promise<Void> promise) {
     if (aesService != null) {
       aesService.stop()
-        .thenRun(promise::complete)
-        .handle((res, ex) -> {
+        .onComplete(promise)
+        .otherwise(ex -> {
           if (ex != null) {
             logger.warn(ex);
-            promise.fail(ex);
-            return ex;
           }
-          promise.complete();
-          return res;
+          return null;
         });
     } else {
       promise.complete();
     }
   }
-
 }

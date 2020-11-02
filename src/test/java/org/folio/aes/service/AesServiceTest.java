@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 
 import org.folio.aes.model.RoutingRule;
 import org.junit.jupiter.api.Test;
@@ -34,6 +33,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
@@ -106,6 +107,7 @@ class AesServiceTest {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add("Content-Type", "application/json");
     headers.add(OKAPI_HANDLER_RESULT, "200");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
@@ -133,13 +135,14 @@ class AesServiceTest {
     headers.add(OKAPI_TENANT, "abc");
     headers.add("Content-Type", "application/json");
     headers.add(OKAPI_HANDLER_RESULT, "200");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    cf.completeExceptionally(new RuntimeException("abc"));
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    Promise<Collection<RoutingRule>> promise = Promise.promise();
+    promise.fail(new RuntimeException("abc"));
+    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
@@ -159,14 +162,15 @@ class AesServiceTest {
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add("Content-Type", "application/json");
     headers.add(OKAPI_HANDLER_RESULT, "200");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBody()).thenReturn(Buffer.buffer("{}"));
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    cf.complete(new ArrayList<>());
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    Promise<Collection<RoutingRule>> promise = Promise.promise();
+    promise.complete(new ArrayList<>());
+    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
@@ -192,6 +196,7 @@ class AesServiceTest {
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add("Content-Type", "application/json");
     headers.add(OKAPI_HANDLER_RESULT, "200");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
@@ -201,9 +206,9 @@ class AesServiceTest {
     rules.add(new RoutingRule("$..*", topicA));
     rules.add(new RoutingRule("$..*", topicB));
     rules.add(new RoutingRule("$.xyz", topicB));
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    cf.complete(rules);
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    Promise<Collection<RoutingRule>> promise = Promise.promise();
+    promise.complete(rules);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
@@ -228,6 +233,7 @@ class AesServiceTest {
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, "200");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
@@ -237,9 +243,9 @@ class AesServiceTest {
     rules.add(new RoutingRule("$..*", topicA));
     rules.add(new RoutingRule("$..*", topicB));
     rules.add(new RoutingRule("$.xyz", topicB));
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    cf.complete(rules);
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    Promise<Collection<RoutingRule>> promise = Promise.promise();
+    promise.complete(rules);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
@@ -264,6 +270,7 @@ class AesServiceTest {
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, "400");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
@@ -273,9 +280,9 @@ class AesServiceTest {
     rules.add(new RoutingRule("$..*", topicA));
     rules.add(new RoutingRule("$..*", topicB));
     rules.add(new RoutingRule("$.xyz", topicB));
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    cf.complete(rules);
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    Promise<Collection<RoutingRule>> promise = Promise.promise();
+    promise.complete(rules);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
@@ -301,6 +308,7 @@ class AesServiceTest {
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, "200");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
@@ -310,9 +318,9 @@ class AesServiceTest {
     rules.add(new RoutingRule("$..*", topicA));
     rules.add(new RoutingRule("$..*", topicB));
     rules.add(new RoutingRule("$.xyz", topicB));
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    cf.complete(rules);
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    Promise<Collection<RoutingRule>> promise = Promise.promise();
+    promise.complete(rules);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
@@ -338,6 +346,7 @@ class AesServiceTest {
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, "422");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
@@ -347,9 +356,9 @@ class AesServiceTest {
     rules.add(new RoutingRule("$..*", topicA));
     rules.add(new RoutingRule("$..*", topicB));
     rules.add(new RoutingRule("$.xyz", topicB));
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    cf.complete(rules);
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    Promise<Collection<RoutingRule>> promise = Promise.promise();
+    promise.complete(rules);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
@@ -375,6 +384,7 @@ class AesServiceTest {
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, "200");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
@@ -384,9 +394,9 @@ class AesServiceTest {
     rules.add(new RoutingRule("$..*", topicA));
     rules.add(new RoutingRule("$..*", topicB));
     rules.add(new RoutingRule("$.xyz", topicB));
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    cf.complete(rules);
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    Promise<Collection<RoutingRule>> promise = Promise.promise();
+    promise.complete(rules);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
@@ -412,6 +422,7 @@ class AesServiceTest {
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, "100");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
@@ -421,9 +432,9 @@ class AesServiceTest {
     rules.add(new RoutingRule("$..*", topicA));
     rules.add(new RoutingRule("$..*", topicB));
     rules.add(new RoutingRule("$.xyz", topicB));
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    cf.complete(rules);
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    Promise<Collection<RoutingRule>> promise = Promise.promise();
+    promise.complete(rules);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {
@@ -448,6 +459,7 @@ class AesServiceTest {
     headers.add(OKAPI_TENANT, "abc");
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
@@ -457,9 +469,9 @@ class AesServiceTest {
     rules.add(new RoutingRule("$..*", topicA));
     rules.add(new RoutingRule("$..*", topicB));
     rules.add(new RoutingRule("$.xyz", topicB));
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
-    cf.complete(rules);
-    when(ruleService.getRules(any(), any(), any())).thenReturn(cf);
+    Promise<Collection<RoutingRule>> promise = Promise.promise();
+    promise.complete(rules);
+    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
     await().until(() -> {

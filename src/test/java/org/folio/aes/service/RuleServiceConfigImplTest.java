@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 
 import org.folio.aes.model.RoutingRule;
 import org.junit.jupiter.api.AfterAll;
@@ -21,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -64,14 +64,17 @@ class RuleServiceConfigImplTest {
   }
 
   @Test
-  void testGetConfig() throws Exception {
+  void testGetConfig(VertxTestContext testContext) throws Exception {
     String okapiUrl = "http://localhost:" + port + CONFIG_ROUTING_QUERY;
-    CompletableFuture<Collection<RoutingRule>> cf = ruleService.getRules(okapiUrl, tenant, token);
-    Collection<RoutingRule> rules = cf.get();
-    assertEquals(count, rules.size());
-    cf = ruleService.getRules(okapiUrl, tenant, token);
-    rules = cf.get();
-    assertEquals(count, rules.size());
+    Future<Collection<RoutingRule>> f1 = ruleService.getRules(okapiUrl, tenant, token);
+    f1.onComplete(testContext.succeeding(v -> {
+      assertEquals(count, f1.result().size());
+      Future<Collection<RoutingRule>> f2 = ruleService.getRules(okapiUrl, tenant, token);
+      f2.onComplete(testContext.succeeding(v1 -> {
+        assertEquals(count, f2.result().size());
+        testContext.completeNow();
+      }));
+    }));
   }
 
   private static String getConfigMock() {

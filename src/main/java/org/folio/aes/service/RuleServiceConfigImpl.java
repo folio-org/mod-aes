@@ -1,10 +1,15 @@
 package org.folio.aes.service;
 
-import static org.folio.aes.util.AesConstants.*;
+import static org.folio.aes.util.AesConstants.CONFIG_CONFIGS;
+import static org.folio.aes.util.AesConstants.CONFIG_ROUTING_CRITERIA;
+import static org.folio.aes.util.AesConstants.CONFIG_ROUTING_TARGET;
+import static org.folio.aes.util.AesConstants.CONFIG_VALUE;
+import static org.folio.aes.util.AesConstants.OKAPI_AES_FILTER_ID;
+import static org.folio.aes.util.AesConstants.OKAPI_TENANT;
+import static org.folio.aes.util.AesConstants.OKAPI_TOKEN;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -12,7 +17,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.aes.model.RoutingRule;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
@@ -47,28 +54,29 @@ public class RuleServiceConfigImpl implements RuleService {
   }
 
   @Override
-  public CompletableFuture<Collection<RoutingRule>> getRules(String okapiUrl, String tenant, String token) {
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
+  public Future<Collection<RoutingRule>> getRules(String okapiUrl, String tenant, String token) {
+    final Promise <Collection<RoutingRule>> promise = Promise.promise();
     CachedRoutingRules cache = cachedRules.get(tenant);
     if (cache != null && (System.currentTimeMillis() - cache.timestamp < CACHE_PERIOD)) {
-      cf.complete(cache.rules);
+      promise.complete(cache.rules);
     } else {
       logger.info("Refresh routing rules for tenant {}", tenant);
       getFreshRules(okapiUrl, tenant, token)
-        .thenAccept(rules -> {
+        .map(rules -> {
           cachedRules.put(tenant, new CachedRoutingRules(System.currentTimeMillis(), rules));
-          cf.complete(rules);
+          promise.complete(rules);
           logger.info("Refreshed rules: {}", rules);
-        }).handle((res, ex) -> {
+          return rules;
+        })
+        .otherwise(ex -> {
+          promise.fail(ex);
           if (ex != null) {
             logger.warn(ex);
-            cf.completeExceptionally(ex);
-            return ex;
           }
-          return res;
+          return null;
         });
     }
-    return cf;
+    return promise.future();
   }
 
   @Override
@@ -76,8 +84,8 @@ public class RuleServiceConfigImpl implements RuleService {
     client.close();
   }
 
-  private CompletableFuture<Collection<RoutingRule>> getFreshRules(String okapiUrl, String tenant, String token) {
-    CompletableFuture<Collection<RoutingRule>> cf = new CompletableFuture<>();
+  private Future<Collection<RoutingRule>> getFreshRules(String okapiUrl, String tenant, String token) {
+    final Promise<Collection<RoutingRule>> promise = Promise.promise();
     HttpRequest<Buffer> request = client.getAbs(okapiUrl);
     MultiMap headers = request.headers().set("Accept", "application/json").set(OKAPI_AES_FILTER_ID, "true");
     if (tenant != null) {
@@ -97,17 +105,17 @@ public class RuleServiceConfigImpl implements RuleService {
               String topic = String.format("%s_%s", tenant, jo.getString(CONFIG_ROUTING_TARGET));
               rules.add(new RoutingRule(jo.getString(CONFIG_ROUTING_CRITERIA), topic));
             });
-          cf.complete(rules);
+          promise.complete(rules);
         } else {
           String errorMsg = response.statusCode() + " " + response.bodyAsString();
           logger.warn(errorMsg);
-          cf.completeExceptionally(new RuntimeException(errorMsg));
+          promise.fail(new RuntimeException(errorMsg));
         }
       } else {
         logger.warn(ar.cause());
-        cf.completeExceptionally(ar.cause());
+        promise.fail(ar.cause());
       }
     });
-    return cf;
+    return promise.future();
   }
 }

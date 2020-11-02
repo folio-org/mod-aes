@@ -16,21 +16,21 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 
 @ExtendWith(VertxExtension.class)
-public class KafkaServiceTest {
+class KafkaServiceTest {
 
   private KafkaService KafkaService = new KafkaService();
 
   @Test
-  public void testCreateProducer(Vertx vertx) {
-    final KafkaException expectedException = assertThrows(
-        KafkaException.class,
-        () -> assertNotNull(KafkaService.createProducer(vertx, new Properties())));
+  void testCreateProducer(Vertx vertx) {
+    final Properties properties = new Properties();
+    final KafkaException expectedException =
+        assertThrows(KafkaException.class, () -> KafkaService.createProducer(vertx, properties));
 
     assertThat(expectedException.getCause(), isA(ConfigException.class));
   }
 
   @Test
-  public void testCreateProducerRecord() {
+  void testCreateProducerRecord() {
     assertNotNull(KafkaService.createProducerRecord("test", "test"));
   }
 }

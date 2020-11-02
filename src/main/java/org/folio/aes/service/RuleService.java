@@ -1,9 +1,10 @@
 package org.folio.aes.service;
 
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
 
 import org.folio.aes.model.RoutingRule;
+
+import io.vertx.core.Future;
 
 public interface RuleService {
 
@@ -15,7 +16,7 @@ public interface RuleService {
    * @param token
    * @return
    */
-  CompletableFuture<Collection<RoutingRule>> getRules(String okapiUrl, String tenant, String token);
+  Future<Collection<RoutingRule>> getRules(String okapiUrl, String tenant, String token);
 
   void stop();
 }
