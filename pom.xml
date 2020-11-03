@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.folio</groupId>
   <artifactId>mod-aes</artifactId>
-  <version>0.0.3</version>
+  <version>0.0.4-SNAPSHOT</version>
 
   <licenses>
     <license>
@@ -51,7 +51,7 @@
     <url>https://github.com/folio-org/mod-aes</url>
     <connection>scm:git:git://github.com/folio-org/mod-aes</connection>
     <developerConnection>scm:git:git@github.com:folio-org/mod-aes.git</developerConnection>
-    <tag>v0.0.3</tag>
+    <tag>HEAD</tag>
   </scm>
 
 
