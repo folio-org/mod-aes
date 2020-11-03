@@ -1,3 +1,10 @@
+## 0.0.3 2020-11-03
+* [MODAES-10](https://issues.folio.org/browse/MODAES-10): Add empty "Requires" section to the aes interface
+* [MODAES-11](https://issues.folio.org/browse/MODAES-11): AES does not handle JSON array responses
+* [MODAES-12](https://issues.folio.org/browse/MODAES-12): Better support for non-JSON bodies
+* [MODAES-13](https://issues.folio.org/browse/MODAES-13): AES memory issues
+* [MODAES-14](https://issues.folio.org/browse/MODAES-14): Move from CompletableFutures to Vert.x Promises
+
 ## 0.0.2 2020-10-09
 * [MODAES-4](https://issues.folio.org/browse/MODAES-4): HTTP compression is not supported
 * [MODAES-5](https://issues.folio.org/browse/MODAES-5): AES produces many NullPointerException messages
