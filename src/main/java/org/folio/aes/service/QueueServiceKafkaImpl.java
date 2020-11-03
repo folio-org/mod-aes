@@ -5,14 +5,15 @@ import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.kafka.common.KafkaException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.kafka.client.producer.KafkaProducer;
 
@@ -63,81 +64,83 @@ public class QueueServiceKafkaImpl implements QueueService {
   }
 
   @Override
-  public CompletableFuture<Void> send(String topic, String msg) {
+  public Future<Void> send(String topic, String msg) {
     return send(topic, msg, defaultKafkaUrl);
   }
 
   @Override
-  public CompletableFuture<Void> send(String topic, String msg, String kafkaUrl) {
-    CompletableFuture<Void> cf = new CompletableFuture<>();
-    getOrCreateProducer(kafkaUrl)
-      .thenCompose(p -> CompletableFuture
-        .runAsync(() -> p.write(kafkaService.createProducerRecord(topic, msg), res -> {
-          if (res.succeeded()) {
-            logger.info("Send OK: {}", msg);
-            cf.complete(null);
-          } else {
-            logger.warn("Send not OK: {}", msg);
-            cf.completeExceptionally(res.cause());
-          }
-        })))
-      .handle((res, ex) -> {
-        if (ex != null) {
-          logger.warn(ex);
-          cf.completeExceptionally(ex);
-          return ex;
-        }
-        return res;
-      });
-    return cf;
+  public Future<Void> send(String topic, String msg, String kafkaUrl) {
+    return getOrCreateProducer(kafkaUrl)
+      .compose(p -> writeToProducer(p, topic, msg));
   }
 
   @Override
-  public CompletableFuture<Void> stop() {
-    List<CompletableFuture<Void>> futures = new ArrayList<>();
-    producers.forEach((k, v) -> futures.add(CompletableFuture
-      .runAsync(() -> v.close(ar -> {
+  public Future<Void> stop() {
+    @SuppressWarnings("rawtypes")
+    final List<Future> futures = new ArrayList<>();
+
+    producers.forEach((k, v) -> futures.add(Future.future(promise -> v.close(ar -> {
         if (ar.succeeded()) {
           logger.info("{} stopped.", k);
+          promise.complete();
         } else {
           logger.warn("{} failed to stop.", k, ar.cause());
-          throw new KafkaException(ar.cause());
+          promise.fail(ar.cause());
         }
       }))));
-    return CompletableFuture.allOf(
-      futures.toArray(new CompletableFuture[futures.size()]));
+
+    return CompositeFuture.all(futures).mapEmpty();
   }
 
-  private CompletableFuture<KafkaProducer<String, String>> getOrCreateProducer(String kafkaUrl) {
+  private Future<Void> writeToProducer(KafkaProducer<String, String> producer, String topic,
+      String message) {
+    final Promise<Void> promise = Promise.promise();
+
+    producer.write(kafkaService.createProducerRecord(topic, message), res -> {
+      if (res.succeeded()) {
+        logger.info("Send OK: {}", message);
+        promise.complete();
+      } else {
+        logger.warn("Send not OK: {}", message);
+        promise.fail(res.cause());
+      }
+    });
+
+    return promise.future();
+  }
+
+  private Future<KafkaProducer<String, String>> getOrCreateProducer(String kafkaUrl) {
     logger.debug("Get Kafka producer for {}", kafkaUrl);
-    CompletableFuture<KafkaProducer<String, String>> cf = new CompletableFuture<>();
-    KafkaProducer<String, String> producer = producers.get(kafkaUrl);
+
+    final Promise<KafkaProducer<String, String>> promise = Promise.promise();
+    final KafkaProducer<String, String> producer = producers.get(kafkaUrl);
+
     if (producer != null) {
       logger.debug("Return an existing producer {}", System.identityHashCode(producer));
-      cf.complete(producer);
+      promise.complete(producer);
     } else {
-      CompletableFuture
-        .supplyAsync(() -> createProducer(kafkaUrl))
-        .thenAccept(newProducer -> {
+      vertx.runOnContext(v -> {
+        try {
+          var newProducer = createProducer(kafkaUrl);
           KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
           // just in case that a duplicate is created due to competition
           if (p != null) {
             logger.warn("Close a producer duplicate {}", System.identityHashCode(newProducer));
-            CompletableFuture.runAsync(newProducer::close);
-            cf.complete(p);
+            newProducer.close();
+            promise.complete(p);
           } else {
-            cf.complete(newProducer);
+            promise.complete(newProducer);
           }
-        }).handle((res, ex) -> {
+        } catch (Exception ex) {
           if (ex != null) {
             logger.warn(ex);
-            cf.completeExceptionally(ex);
-            return ex;
+            promise.fail(ex);
           }
-          return res;
-        });
+        }
+      });
     }
-    return cf;
+
+    return promise.future();
   }
 
   private KafkaProducer<String, String> createProducer(String kafkaUrl) {
@@ -149,5 +152,4 @@ public class QueueServiceKafkaImpl implements QueueService {
     logger.debug("returning producer");
     return producer;
   }
-
 }

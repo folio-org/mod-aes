@@ -2,33 +2,43 @@ package org.folio.aes.service;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-public class QueueServiceLogImplTest {
+import io.vertx.core.Future;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+
+@ExtendWith(VertxExtension.class)
+class QueueServiceLogImplTest {
 
   private QueueService qs = new QueueServiceLogImpl();
 
   @Test
-  public void testSendOne() throws Exception {
-    CompletableFuture<Void> cf = qs.send(null, null);
-    cf.get();
-    assertTrue(cf.isDone());
+  void testSendOne(VertxTestContext testContext) throws Exception {
+    Future<Void> f = qs.send(null, null);
+    f.onComplete(testContext.succeeding(v -> {
+      assertTrue(f.isComplete());
+      testContext.completeNow();
+    }));
   }
 
   @Test
-  public void testSendTwo() throws Exception {
-    CompletableFuture<Void> cf = qs.send(null, null, null);
-    cf.get();
-    assertTrue(cf.isDone());
+  void testSendTwo(VertxTestContext testContext) throws Exception {
+    Future<Void> f = qs.send(null, null, null);
+    f.onComplete(testContext.succeeding(v -> {
+      assertTrue(f.isComplete());
+      testContext.completeNow();
+    }));
   }
 
   @Test
-  public void testStop() throws Exception {
-    CompletableFuture<Void> cf = qs.stop();
-    cf.get();
-    assertTrue(cf.isDone());
+  void testStop(VertxTestContext testContext) throws Exception {
+    Future<Void> f = qs.stop();
+    f.onComplete(testContext.succeeding(v -> {
+      assertTrue(f.isComplete());
+      testContext.completeNow();
+    }));
   }
 
 }

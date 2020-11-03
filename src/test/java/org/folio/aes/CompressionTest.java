@@ -5,7 +5,6 @@ import static io.vertx.junit5.web.TestRequest.bodyResponse;
 import static io.vertx.junit5.web.TestRequest.requestHeader;
 import static io.vertx.junit5.web.TestRequest.statusCode;
 import static io.vertx.junit5.web.TestRequest.testRequest;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.folio.aes.test.Utils.nextFreePort;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
@@ -25,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
@@ -104,9 +104,9 @@ class CompressionTest {
   @DisplayName("Shutdown")
   void tearDown(Vertx vertx, TestInfo testInfo) {
     // The AES service is stopped when the verticle is stopped, so we need the AES service mock
-    // to return a CompletableFuture so that there won't be an NPE. We make it lenient since it
+    // to return a Future so that there won't be an NPE. We make it lenient since it
     // may not be called by the time the MockitoExtension checks for unused stubs.
-    lenient().when(aesService.stop()).thenReturn(completedFuture(null));
+    lenient().when(aesService.stop()).thenReturn(Future.succeededFuture());
 
     log.info("Finished: {}", testInfo.getDisplayName());
   }

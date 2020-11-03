@@ -1,9 +1,9 @@
 package org.folio.aes.service;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import io.vertx.core.Future;
 
 /**
  * Just log the message.
@@ -14,24 +14,19 @@ public class QueueServiceLogImpl implements QueueService {
   private static Logger logger = LogManager.getLogger();
 
   @Override
-  public CompletableFuture<Void> send(String topic, String msg) {
-    CompletableFuture<Void> cf = new CompletableFuture<>();
+  public Future<Void> send(String topic, String msg) {
     logger.info("topic: {}", topic);
     logger.info(msg);
-    cf.complete(null);
-    return cf;
+    return Future.succeededFuture();
   }
 
   @Override
-  public CompletableFuture<Void> send(String topic, String msg, String queueUrl) {
+  public Future<Void> send(String topic, String msg, String queueUrl) {
     return send(topic, msg);
   }
 
   @Override
-  public CompletableFuture<Void> stop() {
-    CompletableFuture<Void> cf = new CompletableFuture<>();
-    cf.complete(null);
-    return cf;
+  public Future<Void> stop() {
+    return Future.succeededFuture();
   }
-
 }

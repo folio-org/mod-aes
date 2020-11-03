@@ -1,6 +1,6 @@
 package org.folio.aes.service;
 
-import java.util.concurrent.CompletableFuture;
+import io.vertx.core.Future;
 
 public interface QueueService {
 
@@ -11,7 +11,7 @@ public interface QueueService {
    * @param msg
    * @return
    */
-  CompletableFuture<Void> send(String topic, String msg);
+  Future<Void> send(String topic, String msg);
 
   /**
    * Send message to topic of given queue.
@@ -21,13 +21,13 @@ public interface QueueService {
    * @param queueUrl
    * @return
    */
-  CompletableFuture<Void> send(String topic, String msg, String queueUrl);
+  Future<Void> send(String topic, String msg, String queueUrl);
 
   /**
    * Stop the queue service and clean up resources.
    *
    * @return
    */
-  CompletableFuture<Void> stop();
+  Future<Void> stop();
 
 }
