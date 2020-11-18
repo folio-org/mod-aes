@@ -16,8 +16,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <vertx.version>3.9.4</vertx.version>
-    <log4j.version>2.13.3</log4j.version>
-    <rest-assured.version>4.3.1</rest-assured.version>
+    <log4j.version>2.14.0</log4j.version>
+    <rest-assured.version>4.3.2</rest-assured.version>
     <jsonpath.version>2.4.0</jsonpath.version>
     <junit.version>5.7.0</junit.version>
   </properties>
@@ -97,6 +97,12 @@
       <scope>runtime</scope>
     </dependency>
     <dependency>
+      <groupId>com.lmax</groupId>
+      <artifactId>disruptor</artifactId>
+      <version>3.4.2</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
       <groupId>io.vertx</groupId>
       <artifactId>vertx-web-client</artifactId>
     </dependency>
@@ -168,7 +174,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>3.5.13</version>
+      <version>3.6.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -181,6 +187,11 @@
       <groupId>org.awaitility</groupId>
       <artifactId>awaitility</artifactId>
       <version>4.0.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-jcl</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

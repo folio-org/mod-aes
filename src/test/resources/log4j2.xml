@@ -6,8 +6,8 @@
     </Console>
   </Appenders>
   <Loggers>
-    <Logger name="org.folio.aes" level="debug"/>
-    <Root level="info">
+    <Logger name="org.folio.aes" level="debug" includeLocation="true"/>
+    <Root level="info" includeLocation="true">
       <AppenderRef ref="STDOUT"/>
     </Root>
   </Loggers>

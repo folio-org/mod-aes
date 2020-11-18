@@ -141,7 +141,7 @@ class AesServiceTest {
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     Promise<Collection<RoutingRule>> promise = Promise.promise();
-    promise.fail(new RuntimeException("abc"));
+    promise.fail("abc");
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;

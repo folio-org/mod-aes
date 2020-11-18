@@ -16,13 +16,17 @@ import static org.folio.aes.util.AesConstants.OKAPI_TOKEN_AUTH_MOD;
 import static org.folio.aes.util.AesConstants.OKAPI_TOKEN_SUB;
 import static org.folio.aes.util.AesConstants.OKAPI_URL;
 import static org.folio.aes.util.AesConstants.TENANT_NONE;
+import static org.folio.aes.util.AesUtils.checkRoutingRules;
+import static org.folio.aes.util.AesUtils.containsPII;
+import static org.folio.aes.util.AesUtils.convertMultiMapToJsonObject;
+import static org.folio.aes.util.AesUtils.decodeOkapiToken;
+import static org.folio.aes.util.AesUtils.maskPassword;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.folio.aes.util.AesUtils;
+import org.folio.aes.model.RoutingRule;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
@@ -52,9 +56,8 @@ public class AesService {
     // skip FOLIO internal AUTH checking
     String token = headers.get(OKAPI_TOKEN);
     if (!skip && token != null) {
-      JsonObject jo = new JsonObject();
       try {
-        jo = AesUtils.decodeOkapiToken(token);
+        final JsonObject jo = decodeOkapiToken(token);
         if (OKAPI_TOKEN_AUTH_MOD.equals(jo.getString(OKAPI_TOKEN_SUB))) {
           skip = true;
         }
@@ -81,44 +84,32 @@ public class AesService {
         // edge case: always send a copy for no-tenant request
         getQueueService().send(TENANT_NONE, msg);
       } else {
-        getRuleService().getRules(okapiUrl, tenant, token).map(rules -> {
-          if (rules.isEmpty()) {
-            // send all messages to default topic if no rules defined
-            getQueueService().send(tenant + "_default", msg);
-          } else {
-            Set<String> jsonPaths = new HashSet<>();
-            rules.forEach(r -> jsonPaths.add(r.getCriteria()));
-            Set<String> validJsonPaths = AesUtils.checkJsonPaths(msg, jsonPaths);
-            rules.forEach(r -> {
-              if (validJsonPaths.contains(r.getCriteria())) {
-                getQueueService().send(r.getTarget(), msg);
-              }
-            });
-          }
-          return null;
-        }).otherwise(ex -> {
-          if (ex != null) {
-            logger.warn(ex);
-          }
-          return null;
-        });
+        getRuleService().getRules(okapiUrl, tenant, token)
+          .onSuccess(rules -> sendMessage(rules, tenant, msg))
+          .onFailure(ex -> logger.warn(ex));
       }
     });
 
     ctx.response().end();
   }
 
+  private void sendMessage(Collection<RoutingRule> rules, String tenant, String msg) {
+    if (rules.isEmpty()) {
+      // send all messages to default topic if no rules defined
+      getQueueService().send(tenant + "_default", msg);
+    } else {
+      checkRoutingRules(msg, rules).forEach(rule -> getQueueService().send(rule.getTarget(), msg));
+    }
+  }
+
   private JsonObject collectData(RoutingContext ctx) {
     final JsonObject data = new JsonObject();
     data.put(MSG_PATH, ctx.normalisedPath());
-    data.put(MSG_HEADERS, AesUtils.convertMultiMapToJsonObject(ctx.request().headers()));
-    data.put(MSG_PARAMS, AesUtils.convertMultiMapToJsonObject(ctx.request().params()));
+    data.put(MSG_HEADERS, convertMultiMapToJsonObject(ctx.request().headers()));
+    data.put(MSG_PARAMS, convertMultiMapToJsonObject(ctx.request().params()));
     final Buffer bodyBuffer = ctx.getBody() == null ? Buffer.buffer() : ctx.getBody();
     // Get the actual response status code from this Okapi provided header
-    final String statusCodeString = ctx.request().headers().get(OKAPI_HANDLER_RESULT);
-    final boolean success = statusCodeString == null
-        || Integer.parseInt(statusCodeString) == 422 // this error should be JSON formatted
-        || (Integer.parseInt(statusCodeString) >= 200 && Integer.parseInt(statusCodeString) < 300);
+    final boolean success = isSuccessStatus(ctx.request().headers().get(OKAPI_HANDLER_RESULT));
     final String contentType = ctx.request().headers().get(CONTENT_TYPE);
     Object bodyJson = null;
     if (success && bodyBuffer.length() > 0 && contentType != null &&
@@ -127,12 +118,11 @@ public class AesService {
         bodyJson = bodyBuffer.toJson();
       } catch (Exception e) {
         logger.warn("Failed to convert to JSON: {}", bodyBuffer::toString);
-        bodyJson = null;
       }
     }
     if (bodyJson != null) {
-      AesUtils.maskPassword(bodyJson);
-      data.put(MSG_PII, AesUtils.containsPII(bodyJson));
+      maskPassword(bodyJson);
+      data.put(MSG_PII, containsPII(bodyJson));
       data.put(MSG_BODY, bodyJson);
     } else {
       data.put(MSG_PII, false);
@@ -157,4 +147,16 @@ public class AesService {
     this.queueService = queueService;
   }
 
+  private boolean isSuccessStatus(String statusCodeString) {
+    if (statusCodeString == null) {
+      return true;
+    }
+
+    try {
+      final int statusCode = Integer.parseInt(statusCodeString);
+      return statusCode == 422 || statusCode >= 200 && statusCode < 300;
+    } catch (NumberFormatException e) {
+      return true;
+    }
+  }
 }

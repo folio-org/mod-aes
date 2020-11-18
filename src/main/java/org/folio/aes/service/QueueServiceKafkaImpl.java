@@ -70,8 +70,12 @@ public class QueueServiceKafkaImpl implements QueueService {
 
   @Override
   public Future<Void> send(String topic, String msg, String kafkaUrl) {
-    return getOrCreateProducer(kafkaUrl)
-      .compose(p -> writeToProducer(p, topic, msg));
+    try {
+      return writeToProducer(getOrCreateProducer(kafkaUrl), topic, msg);
+    } catch (Exception e) {
+      logger.warn(e);
+      return Future.failedFuture(e);
+    }
   }
 
   @Override
@@ -109,38 +113,26 @@ public class QueueServiceKafkaImpl implements QueueService {
     return promise.future();
   }
 
-  private Future<KafkaProducer<String, String>> getOrCreateProducer(String kafkaUrl) {
+  private KafkaProducer<String, String> getOrCreateProducer(String kafkaUrl) {
     logger.debug("Get Kafka producer for {}", kafkaUrl);
 
-    final Promise<KafkaProducer<String, String>> promise = Promise.promise();
     final KafkaProducer<String, String> producer = producers.get(kafkaUrl);
 
     if (producer != null) {
       logger.debug("Return an existing producer {}", System.identityHashCode(producer));
-      promise.complete(producer);
+      return producer;
     } else {
-      vertx.runOnContext(v -> {
-        try {
-          var newProducer = createProducer(kafkaUrl);
-          KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
-          // just in case that a duplicate is created due to competition
-          if (p != null) {
-            logger.warn("Close a producer duplicate {}", System.identityHashCode(newProducer));
-            newProducer.close();
-            promise.complete(p);
-          } else {
-            promise.complete(newProducer);
-          }
-        } catch (Exception ex) {
-          if (ex != null) {
-            logger.warn(ex);
-            promise.fail(ex);
-          }
-        }
-      });
+      var newProducer = createProducer(kafkaUrl);
+      KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
+      // just in case that a duplicate is created due to competition
+      if (p != null) {
+        logger.warn("Close a producer duplicate {}", System.identityHashCode(newProducer));
+        newProducer.close();
+        return p;
+      } else {
+        return newProducer;
+      }
     }
-
-    return promise.future();
   }
 
   private KafkaProducer<String, String> createProducer(String kafkaUrl) {

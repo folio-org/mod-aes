@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.folio.aes.model.RoutingRule;
 import org.junit.jupiter.api.Test;
 
 import io.vertx.core.MultiMap;
@@ -33,13 +34,13 @@ class AesUtilsTest {
   }
 
   @Test
-  void testCheckJsonPaths() {
-    String goodJsonPath = "$.store.book[?(@.price < 10)]";
-    String badJsonPath = "$.store.book[?(@.price > 100)]";
-    Set<String> jsonPaths = new HashSet<>(Arrays.asList(goodJsonPath, badJsonPath));
-    Set<String> rs = AesUtils.checkJsonPaths(jsonpathTestContent, jsonPaths);
-    assertTrue(rs.contains(goodJsonPath));
-    assertFalse(rs.contains(badJsonPath));
+  void testCheckRoutingRules() {
+    RoutingRule goodRoutingRule = new RoutingRule("$.store.book[?(@.price < 10)]", "tenant1");
+    RoutingRule badRoutingRule = new RoutingRule("$.store.book[?(@.price > 100)]", "tenant2");
+    Set<RoutingRule> routingRules = new HashSet<>(Arrays.asList(goodRoutingRule, badRoutingRule));
+    Set<RoutingRule> rs = AesUtils.checkRoutingRules(jsonpathTestContent, routingRules);
+    assertTrue(rs.contains(goodRoutingRule));
+    assertFalse(rs.contains(badRoutingRule));
   }
 
   @Test
