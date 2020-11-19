@@ -23,6 +23,7 @@ class RoutingRuleTest {
     final RoutingRule ruleCopy = new RoutingRule("$.store.book[?(@.price < 10)]", "tenant1");
     final RoutingRule ruleWrongCriteria = new RoutingRule("bad", "tenant1");
     final RoutingRule ruleWrongTarget = new RoutingRule(".store.book[?(@.price < 10)]", "bad");
+    final RoutingRule ruleWrongBoth = new RoutingRule("badCriteria", "badTarget");
     final Object badType = "bad";
 
     assertAll("equals",
@@ -30,7 +31,8 @@ class RoutingRuleTest {
         () -> assertEquals(true, rule.equals(ruleCopy)), // identical
         () -> assertEquals(false, rule.equals(badType)), // wrong type
         () -> assertEquals(false, rule.equals(ruleWrongCriteria)), // wrong criteria
-        () -> assertEquals(false, rule.equals(ruleWrongTarget)) // wrong target
+        () -> assertEquals(false, rule.equals(ruleWrongTarget)), // wrong target
+        () -> assertEquals(false, rule.equals(ruleWrongBoth)) // wrong criteria and target
     );
   }
 }
