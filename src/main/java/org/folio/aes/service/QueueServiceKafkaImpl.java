@@ -116,23 +116,7 @@ public class QueueServiceKafkaImpl implements QueueService {
   private KafkaProducer<String, String> getOrCreateProducer(String kafkaUrl) {
     logger.debug("Get Kafka producer for {}", kafkaUrl);
 
-    final KafkaProducer<String, String> producer = producers.get(kafkaUrl);
-
-    if (producer != null) {
-      logger.debug("Return an existing producer {}", System.identityHashCode(producer));
-      return producer;
-    } else {
-      var newProducer = createProducer(kafkaUrl);
-      KafkaProducer<String, String> p = producers.putIfAbsent(kafkaUrl, newProducer);
-      // just in case that a duplicate is created due to competition
-      if (p != null) {
-        logger.warn("Close a producer duplicate {}", System.identityHashCode(newProducer));
-        newProducer.close();
-        return p;
-      } else {
-        return newProducer;
-      }
-    }
+    return producers.computeIfAbsent(kafkaUrl, this::createProducer);
   }
 
   private KafkaProducer<String, String> createProducer(String kafkaUrl) {
