@@ -1,9 +1,14 @@
 package org.folio.aes;
 
-import static io.restassured.RestAssured.given;
 import static org.folio.aes.test.Utils.nextFreePort;
 import static org.hamcrest.Matchers.is;
 
+import io.restassured.RestAssured;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -12,13 +17,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import io.restassured.RestAssured;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 
 @ExtendWith(VertxExtension.class)
 class AesVerticleTest {
@@ -57,21 +55,23 @@ class AesVerticleTest {
 
   @Test
   void rootApiResponds() {
-    given()
-    .when()
-      .get("/")
-    .then()
-      .statusCode(is(200))
-      .body(is("mod-aes is up running"));
+    RestAssured
+      .given()
+      .when()
+        .get("/")
+      .then()
+        .statusCode(is(200))
+        .body(is("mod-aes is up running"));
   }
 
   @Test
   void healthCheckResponds() {
-    given()
-    .when()
-      .get("/admin/health")
-    .then()
-      .statusCode(is(200))
-      .body(is("OK"));
+    RestAssured
+      .given()
+      .when()
+        .get("/admin/health")
+      .then()
+        .statusCode(is(200))
+        .body(is("OK"));
   }
 }

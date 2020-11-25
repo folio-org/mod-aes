@@ -10,19 +10,6 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.folio.aes.service.AesService;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -36,9 +23,24 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.junit5.web.VertxWebClientExtension;
 import io.vertx.junit5.web.WebClientOptionsInject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.folio.aes.service.AesService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * This test is to demonstrate that compressed data passed with 
+ * This test is to demonstrate that compressed data passed with the "Content-Encoding" header
+ * will be decompressed when the server has compression support enabled as it does by default.
+ * Disabling compression support in the verticle and running this test will fail.
+ *
  * @author mreno
  *
  */
@@ -61,9 +63,9 @@ class CompressionTest {
 
   @WebClientOptionsInject
   public WebClientOptions options = new WebClientOptions()
-    .setDefaultHost("localhost")
-    .setDefaultPort(PORT)
-    .setTryUseCompression(true);
+      .setDefaultHost("localhost")
+      .setDefaultPort(PORT)
+      .setTryUseCompression(true);
 
   private final Buffer compressedJson = buffer(new byte [] {
       (byte) 0x1f, (byte) 0x8b, (byte) 0x08, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
@@ -75,7 +77,7 @@ class CompressionTest {
       (byte) 0x58, (byte) 0xaa, (byte) 0x16, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0xff,
       (byte) 0xff, (byte) 0x03, (byte) 0x00, (byte) 0xf8, (byte) 0x13, (byte) 0x1c, (byte) 0x36,
       (byte) 0x2a, (byte) 0x00, (byte) 0x00, (byte) 0x00
-    });
+  });
 
   private final Buffer expectedJson = buffer("{\"key\": \"test\", \"value\": \"this is a test\"}");
 
@@ -98,7 +100,7 @@ class CompressionTest {
     vertx.deployVerticle(aesVerticle, opts, testContext.completing());
 
     log.info("Verticle deployment complete");
-}
+  }
 
   @AfterEach
   @DisplayName("Shutdown")
@@ -126,12 +128,12 @@ class CompressionTest {
     }).when(aesService).prePostHandler(any(RoutingContext.class));
 
     testRequest(client, HttpMethod.POST, "/test/path")
-      .with(
-          requestHeader("Content-Encoding", "gzip"),
-          requestHeader("Content-Type", "application/json"))
-      .expect(
-          statusCode(200),
-          bodyResponse(expectedJson, "application/text"))
-      .sendBuffer(compressedJson, testContext);
+        .with(
+            requestHeader("Content-Encoding", "gzip"),
+            requestHeader("Content-Type", "application/json"))
+        .expect(
+            statusCode(200),
+            bodyResponse(expectedJson, "application/text"))
+        .sendBuffer(compressedJson, testContext);
   }
 }

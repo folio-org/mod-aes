@@ -2,6 +2,11 @@ package org.folio.aes;
 
 import static org.folio.aes.util.AesConstants.MOD_NAME;
 
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Promise;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.BodyHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.aes.service.AesService;
@@ -9,12 +14,6 @@ import org.folio.aes.service.KafkaService;
 import org.folio.aes.service.QueueServiceKafkaImpl;
 import org.folio.aes.service.QueueServiceLogImpl;
 import org.folio.aes.service.RuleServiceConfigImpl;
-
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.BodyHandler;
 
 public class AesVerticle extends AbstractVerticle {
 
@@ -25,17 +24,17 @@ public class AesVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> promise) throws Exception {
 
-    int port = Integer.parseInt(
-      System.getProperty("port",
-        System.getProperty("http.port",
-          "" + context.config().getInteger("port", 8081))));
+    final int port = Integer.getInteger("port",
+        Integer.getInteger("http.port",
+            context.config().getInteger("port", 8081)));
 
     String kafkaUrl = System.getProperty("kafka.url", null);
 
     aesService.setRuleService(new RuleServiceConfigImpl(vertx));
     aesService.setQueueService(
-      kafkaUrl == null ? new QueueServiceLogImpl()
-        : new QueueServiceKafkaImpl(vertx, kafkaUrl, new KafkaService(), false));
+        kafkaUrl == null
+          ? new QueueServiceLogImpl()
+          : new QueueServiceKafkaImpl(vertx, kafkaUrl, new KafkaService(), false));
 
     Router router = Router.router(vertx);
     // root
@@ -49,29 +48,25 @@ public class AesVerticle extends AbstractVerticle {
 
     HttpServerOptions options = new HttpServerOptions()
         .setCompressionSupported(true)
-        .setDecompressionSupported(true);
-    vertx.createHttpServer(options).requestHandler(router).listen(port, rs -> {
+        .setDecompressionSupported(true)
+        .setPort(port);
+    vertx.createHttpServer(options).requestHandler(router).listen(rs -> {
       if (rs.succeeded()) {
+        logger.info("HTTP server started on port {}", port);
         promise.complete();
       } else {
+        logger.error("HTTP server failed to start on port {}", port, rs.cause());
         promise.fail(rs.cause());
       }
     });
-
-    logger.info("HTTP server started on port {}", port);
   }
 
   @Override
   public void stop(Promise<Void> promise) {
     if (aesService != null) {
       aesService.stop()
-        .onComplete(promise)
-        .otherwise(ex -> {
-          if (ex != null) {
-            logger.warn(ex);
-          }
-          return null;
-        });
+          .onComplete(promise)
+          .onFailure(logger::warn);
     } else {
       promise.complete();
     }
