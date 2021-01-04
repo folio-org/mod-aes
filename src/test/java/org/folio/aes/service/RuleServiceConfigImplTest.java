@@ -42,7 +42,11 @@ class RuleServiceConfigImplTest {
   public static void setUpOnce(Vertx vertx, VertxTestContext context) throws Throwable {
     port = nextFreePort();
     vertx.createHttpServer().requestHandler(r -> {
-      r.response().end(getConfigMock());
+      if (CONFIG_ROUTING_QUERY.startsWith(r.path())) {
+        r.response().end(getConfigMock());
+      } else {
+        r.response().setStatusCode(404).end();
+      }
     }).listen(port, context.completing());
 
     assertTrue(context.awaitCompletion(5, SECONDS));
@@ -74,6 +78,16 @@ class RuleServiceConfigImplTest {
         assertEquals(count, f2.result().size());
         testContext.completeNow();
       }));
+    }));
+  }
+
+  @Test
+  void testGetConfigFailure(VertxTestContext testContext) throws Exception {
+    String okapiUrl = "http://localhost:" + port + "/xyzzy";
+    Future<Collection<RoutingRule>> f1 = ruleService.getRules(okapiUrl, tenant, token);
+    f1.onComplete(testContext.failing(v -> {
+      assertEquals("404 null", f1.cause().getMessage());
+      testContext.completeNow();
     }));
   }
 

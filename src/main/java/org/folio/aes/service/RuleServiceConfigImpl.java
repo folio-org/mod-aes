@@ -18,7 +18,6 @@ import org.apache.logging.log4j.Logger;
 import org.folio.aes.model.RoutingRule;
 
 import io.vertx.core.Future;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -37,46 +36,23 @@ public class RuleServiceConfigImpl implements RuleService {
   private static final long CACHE_PERIOD = 1 * 60 * 1000L; // one minute
 
   private final WebClient client;
-  private ConcurrentMap<String, CachedRoutingRules> cachedRules = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Future<Collection<RoutingRule>>> cachedRules;
+  private final Vertx vertx;
 
   public RuleServiceConfigImpl(Vertx vertx) {
+    this.vertx = vertx;
     this.client = WebClient.create(vertx);
-  }
-
-  private static class CachedRoutingRules {
-    private long timestamp = 0L;
-    private Collection<RoutingRule> rules = new ArrayList<>();
-
-    public CachedRoutingRules(long timestamp, Collection<RoutingRule> rules) {
-      this.timestamp = timestamp;
-      this.rules = rules;
-    }
+    this.cachedRules = new ConcurrentHashMap<>();
   }
 
   @Override
   public Future<Collection<RoutingRule>> getRules(String okapiUrl, String tenant, String token) {
-    final Promise <Collection<RoutingRule>> promise = Promise.promise();
-    CachedRoutingRules cache = cachedRules.get(tenant);
-    if (cache != null && (System.currentTimeMillis() - cache.timestamp < CACHE_PERIOD)) {
-      promise.complete(cache.rules);
-    } else {
-      logger.info("Refresh routing rules for tenant {}", tenant);
-      getFreshRules(okapiUrl, tenant, token)
-        .map(rules -> {
-          cachedRules.put(tenant, new CachedRoutingRules(System.currentTimeMillis(), rules));
-          promise.complete(rules);
-          logger.info("Refreshed rules: {}", rules);
-          return rules;
-        })
-        .otherwise(ex -> {
-          promise.fail(ex);
-          if (ex != null) {
-            logger.warn(ex);
-          }
-          return null;
-        });
-    }
-    return promise.future();
+    return cachedRules.computeIfAbsent(tenant, key -> {
+      logger.info("Refresh routing rules for tenant {}", key);
+      return getFreshRules(okapiUrl, key, token)
+          .onSuccess(rules -> vertx.setTimer(CACHE_PERIOD, id -> cachedRules.remove(key)))
+          .onFailure(e -> cachedRules.remove(key));
+    });
   }
 
   @Override
@@ -87,12 +63,12 @@ public class RuleServiceConfigImpl implements RuleService {
   private Future<Collection<RoutingRule>> getFreshRules(String okapiUrl, String tenant, String token) {
     final Promise<Collection<RoutingRule>> promise = Promise.promise();
     HttpRequest<Buffer> request = client.getAbs(okapiUrl);
-    MultiMap headers = request.headers().set("Accept", "application/json").set(OKAPI_AES_FILTER_ID, "true");
+    request.putHeader("Accept", "application/json").putHeader(OKAPI_AES_FILTER_ID, "true");
     if (tenant != null) {
-      headers.set(OKAPI_TENANT, tenant);
+      request.putHeader(OKAPI_TENANT, tenant);
     }
     if (token != null) {
-      headers.set(OKAPI_TOKEN, token);
+      request.putHeader(OKAPI_TOKEN, token);
     }
     request.send(ar -> {
       if (ar.succeeded()) {
@@ -109,7 +85,7 @@ public class RuleServiceConfigImpl implements RuleService {
         } else {
           String errorMsg = response.statusCode() + " " + response.bodyAsString();
           logger.warn(errorMsg);
-          promise.fail(new RuntimeException(errorMsg));
+          promise.fail(errorMsg);
         }
       } else {
         logger.warn(ar.cause());

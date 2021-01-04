@@ -27,6 +27,8 @@ import java.util.Collection;
 import org.folio.aes.model.RoutingRule;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -141,7 +143,7 @@ class AesServiceTest {
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     Promise<Collection<RoutingRule>> promise = Promise.promise();
-    promise.fail(new RuntimeException("abc"));
+    promise.fail("abc");
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
@@ -373,8 +375,9 @@ class AesServiceTest {
     verifyNoMoreInteractions(queueService);
   }
 
-  @Test
-  void testSendWithNoBody(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
+  @ParameterizedTest
+  @ValueSource(strings = {"200", "100", "garbage"})
+  void testSendWithNoBodyAndVariousStatuses(String statusCode, @Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
     String topicA = "ta";
     String topicB = "tb";
@@ -383,45 +386,7 @@ class AesServiceTest {
     headers.add(OKAPI_TENANT, "abc");
     headers.add(OKAPI_TOKEN,
         "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
-    headers.add(OKAPI_HANDLER_RESULT, "200");
-    when(ctx.vertx()).thenReturn(Vertx.vertx());
-    when(ctx.request()).thenReturn(request);
-    when(ctx.response()).thenReturn(response);
-    when(request.headers()).thenReturn(headers);
-    when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
-    when(ctx.getBody()).thenReturn(Buffer.buffer());
-    Collection<RoutingRule> rules = new ArrayList<>();
-    rules.add(new RoutingRule("$..*", topicA));
-    rules.add(new RoutingRule("$..*", topicB));
-    rules.add(new RoutingRule("$.xyz", topicB));
-    Promise<Collection<RoutingRule>> promise = Promise.promise();
-    promise.complete(rules);
-    when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
-    aesService.prePostHandler(ctx);
-    long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
-    verify(ruleService, times(1)).getRules(any(), any(), any());
-    ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-    verify(queueService).send(eq(topicA), argument.capture());
-    checkMsg(argument.getValue());
-    verify(queueService).send(eq(topicB), argument.capture());
-    checkMsg(argument.getValue());
-    verifyNoMoreInteractions(queueService);
-  }
-
-  @Test
-  void testSendWith100Status(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
-      @Mock HttpServerResponse response) throws InterruptedException {
-    String topicA = "ta";
-    String topicB = "tb";
-    MultiMap headers = MultiMap.caseInsensitiveMultiMap();
-    headers.add("Content-Type", "application/json");
-    headers.add(OKAPI_TENANT, "abc");
-    headers.add(OKAPI_TOKEN,
-        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
-    headers.add(OKAPI_HANDLER_RESULT, "100");
+    headers.add(OKAPI_HANDLER_RESULT, statusCode);
     when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);

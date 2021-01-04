@@ -3,13 +3,17 @@ package org.folio.aes.util;
 import static org.folio.aes.util.AesConstants.*;
 
 import java.util.Base64;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.folio.aes.model.RoutingRule;
+
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
+import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.ReadContext;
 
 import io.vertx.core.MultiMap;
@@ -25,20 +29,21 @@ public class AesUtils {
   // adjust JsonPath configuration to simplify path checking
   private static final Configuration jpConfig = Configuration.defaultConfiguration()
     .addOptions(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST);
+  private static final ParseContext parseContext = JsonPath.using(jpConfig);
 
   /**
-   * Check JsonPaths.
+   * Check routing rules.
    *
    * @param json
-   * @param jsonPaths
+   * @param routingRules
    */
-  public static Set<String> checkJsonPaths(String json, Set<String> jsonPaths) {
-    Set<String> goodOnes = new HashSet<>();
-    ReadContext ctx = JsonPath.using(jpConfig).parse(json);
-    jsonPaths.forEach(jsonPath -> {
-      List<?> list = ctx.read(jsonPath);
+  public static Set<RoutingRule> checkRoutingRules(String json, Collection<RoutingRule> routingRules) {
+    Set<RoutingRule> goodOnes = new HashSet<>();
+    ReadContext ctx = parseContext.parse(json);
+    routingRules.forEach(routingRule -> {
+      List<?> list = ctx.read(routingRule.getCriteria());
       if (!list.isEmpty()) {
-        goodOnes.add(jsonPath);
+        goodOnes.add(routingRule);
       }
     });
     return goodOnes;
