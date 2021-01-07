@@ -8,15 +8,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -27,6 +18,13 @@ import io.vertx.junit5.VertxTestContext;
 import io.vertx.kafka.client.producer.KafkaProducer;
 import io.vertx.kafka.client.producer.KafkaProducerRecord;
 import io.vertx.kafka.client.producer.RecordMetadata;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith({VertxExtension.class, MockitoExtension.class})
 class QueueServiceKafkaImplTest {
@@ -83,9 +81,9 @@ class QueueServiceKafkaImplTest {
     when(kafkaService.createProducer(any(), any())).thenThrow(new RuntimeException("bad"));
     Future<Void> future = qs.send("topic_a", "msg_a");
     future.onComplete(testContext.failing(v -> {
-        assertEquals(RuntimeException.class, future.cause().getClass());
-        testContext.completeNow();
-      }));
+      assertEquals(RuntimeException.class, future.cause().getClass());
+      testContext.completeNow();
+    }));
   }
 
   @Test
@@ -150,9 +148,9 @@ class QueueServiceKafkaImplTest {
     when(kafkaService.createProducer(any(), any())).thenReturn(kafkaProducer);
     when(kafkaService.createProducerRecord(any(), any())).thenReturn(producerRecord);
     doAnswer(invocation -> {
-        Handler<AsyncResult<RecordMetadata>> handler = invocation.getArgument(1);
-        handler.handle(Future.succeededFuture(new RecordMetadata()));
-        return null;
-      }).when(kafkaProducer).write(any(), any());
+      Handler<AsyncResult<RecordMetadata>> handler = invocation.getArgument(1);
+      handler.handle(Future.succeededFuture(new RecordMetadata()));
+      return null;
+    }).when(kafkaProducer).write(any(), any());
   }
 }

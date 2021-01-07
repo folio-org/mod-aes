@@ -21,9 +21,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import java.util.ArrayList;
 import java.util.Collection;
-
+import java.util.List;
 import org.folio.aes.model.RoutingRule;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,15 +41,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.web.RoutingContext;
 
 @ExtendWith(MockitoExtension.class)
 class AesServiceTest {
@@ -93,8 +92,8 @@ class AesServiceTest {
   void testSendSkipInternalAuth(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) {
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
-    headers.add(OKAPI_TOKEN,
-        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJfQVVUSFpfTU9EVUxFXyJ9.18R_RlVJNlrDRynNEbGSRlf3E51QKYyaZOjwr9tVQmYUitJS5Ps_EeU3JVHZRrDoNnRLQGmHZwiNxMYEBBDKQQ");
+    headers.add(OKAPI_TOKEN, "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJfQVVUSFpfTU9EVUxFXyJ9."
+        + "18R_RlVJNlrDRynNEbGSRlf3E51QKYyaZOjwr9tVQmYUitJS5Ps_EeU3JVHZRrDoNnRLQGmHZwiNxMYEBBDKQQ");
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
@@ -157,11 +156,11 @@ class AesServiceTest {
   @Test
   void testSendWithoutRules(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
-    String defaultTopic = "abc_default";
+    final String defaultTopic = "abc_default";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TENANT, "abc");
-    headers.add(OKAPI_TOKEN,
-        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    headers.add(OKAPI_TOKEN, "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-"
+        + "qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add("Content-Type", "application/json");
     headers.add(OKAPI_HANDLER_RESULT, "200");
     when(ctx.vertx()).thenReturn(Vertx.vertx());
@@ -190,12 +189,12 @@ class AesServiceTest {
   @Test
   void testSend(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
-    String topicA = "ta";
-    String topicB = "tb";
+    final String topicA = "ta";
+    final String topicB = "tb";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TENANT, "abc");
-    headers.add(OKAPI_TOKEN,
-        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    headers.add(OKAPI_TOKEN, "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-"
+        + "qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add("Content-Type", "application/json");
     headers.add(OKAPI_HANDLER_RESULT, "200");
     when(ctx.vertx()).thenReturn(Vertx.vertx());
@@ -204,10 +203,10 @@ class AesServiceTest {
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBody()).thenReturn(Buffer.buffer("{}"));
-    Collection<RoutingRule> rules = new ArrayList<>();
-    rules.add(new RoutingRule("$..*", topicA));
-    rules.add(new RoutingRule("$..*", topicB));
-    rules.add(new RoutingRule("$.xyz", topicB));
+    Collection<RoutingRule> rules = List.of(
+        new RoutingRule("$..*", topicA),
+        new RoutingRule("$..*", topicB),
+        new RoutingRule("$.xyz", topicB));
     Promise<Collection<RoutingRule>> promise = Promise.promise();
     promise.complete(rules);
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
@@ -228,12 +227,12 @@ class AesServiceTest {
   @Test
   void testSendWithoutContentType(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
-    String topicA = "ta";
-    String topicB = "tb";
+    final String topicA = "ta";
+    final String topicB = "tb";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TENANT, "abc");
-    headers.add(OKAPI_TOKEN,
-        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    headers.add(OKAPI_TOKEN, "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-"
+        + "qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, "200");
     when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
@@ -241,10 +240,10 @@ class AesServiceTest {
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBody()).thenReturn(Buffer.buffer());
-    Collection<RoutingRule> rules = new ArrayList<>();
-    rules.add(new RoutingRule("$..*", topicA));
-    rules.add(new RoutingRule("$..*", topicB));
-    rules.add(new RoutingRule("$.xyz", topicB));
+    Collection<RoutingRule> rules = List.of(
+        new RoutingRule("$..*", topicA),
+        new RoutingRule("$..*", topicB),
+        new RoutingRule("$.xyz", topicB));
     Promise<Collection<RoutingRule>> promise = Promise.promise();
     promise.complete(rules);
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
@@ -265,12 +264,12 @@ class AesServiceTest {
   @Test
   void testSendWithError(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
-    String topicA = "ta";
-    String topicB = "tb";
+    final String topicA = "ta";
+    final String topicB = "tb";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add(OKAPI_TENANT, "abc");
-    headers.add(OKAPI_TOKEN,
-        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    headers.add(OKAPI_TOKEN, "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-"
+        + "qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, "400");
     when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
@@ -278,10 +277,10 @@ class AesServiceTest {
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBody()).thenReturn(Buffer.buffer("This is an error"));
-    Collection<RoutingRule> rules = new ArrayList<>();
-    rules.add(new RoutingRule("$..*", topicA));
-    rules.add(new RoutingRule("$..*", topicB));
-    rules.add(new RoutingRule("$.xyz", topicB));
+    Collection<RoutingRule> rules = List.of(
+        new RoutingRule("$..*", topicA),
+        new RoutingRule("$..*", topicB),
+        new RoutingRule("$.xyz", topicB));
     Promise<Collection<RoutingRule>> promise = Promise.promise();
     promise.complete(rules);
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
@@ -302,13 +301,13 @@ class AesServiceTest {
   @Test
   void testSendWithBadJson(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
-    String topicA = "ta";
-    String topicB = "tb";
+    final String topicA = "ta";
+    final String topicB = "tb";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add("Content-Type", "application/json");
     headers.add(OKAPI_TENANT, "abc");
-    headers.add(OKAPI_TOKEN,
-        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    headers.add(OKAPI_TOKEN, "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-"
+        + "qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, "200");
     when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
@@ -316,10 +315,10 @@ class AesServiceTest {
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBody()).thenReturn(Buffer.buffer("This is not JSON"));
-    Collection<RoutingRule> rules = new ArrayList<>();
-    rules.add(new RoutingRule("$..*", topicA));
-    rules.add(new RoutingRule("$..*", topicB));
-    rules.add(new RoutingRule("$.xyz", topicB));
+    Collection<RoutingRule> rules = List.of(
+        new RoutingRule("$..*", topicA),
+        new RoutingRule("$..*", topicB),
+        new RoutingRule("$.xyz", topicB));
     Promise<Collection<RoutingRule>> promise = Promise.promise();
     promise.complete(rules);
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
@@ -340,13 +339,13 @@ class AesServiceTest {
   @Test
   void testSendWith422Error(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
-    String topicA = "ta";
-    String topicB = "tb";
+    final String topicA = "ta";
+    final String topicB = "tb";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add("Content-Type", "application/json");
     headers.add(OKAPI_TENANT, "abc");
-    headers.add(OKAPI_TOKEN,
-        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    headers.add(OKAPI_TOKEN, "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-"
+        + "qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, "422");
     when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
@@ -354,10 +353,10 @@ class AesServiceTest {
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBody()).thenReturn(Buffer.buffer("{\"error\":\"test\"}"));
-    Collection<RoutingRule> rules = new ArrayList<>();
-    rules.add(new RoutingRule("$..*", topicA));
-    rules.add(new RoutingRule("$..*", topicB));
-    rules.add(new RoutingRule("$.xyz", topicB));
+    Collection<RoutingRule> rules = List.of(
+        new RoutingRule("$..*", topicA),
+        new RoutingRule("$..*", topicB),
+        new RoutingRule("$.xyz", topicB));
     Promise<Collection<RoutingRule>> promise = Promise.promise();
     promise.complete(rules);
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
@@ -377,15 +376,17 @@ class AesServiceTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"200", "100", "garbage"})
-  void testSendWithNoBodyAndVariousStatuses(String statusCode, @Mock RoutingContext ctx, @Mock HttpServerRequest request,
+  void testSendWithNoBodyAndVariousStatuses(String statusCode,
+      @Mock RoutingContext ctx,
+      @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
-    String topicA = "ta";
-    String topicB = "tb";
+    final String topicA = "ta";
+    final String topicB = "tb";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add("Content-Type", "application/json");
     headers.add(OKAPI_TENANT, "abc");
-    headers.add(OKAPI_TOKEN,
-        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    headers.add(OKAPI_TOKEN, "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-"
+        + "qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     headers.add(OKAPI_HANDLER_RESULT, statusCode);
     when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
@@ -393,10 +394,10 @@ class AesServiceTest {
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBody()).thenReturn(Buffer.buffer());
-    Collection<RoutingRule> rules = new ArrayList<>();
-    rules.add(new RoutingRule("$..*", topicA));
-    rules.add(new RoutingRule("$..*", topicB));
-    rules.add(new RoutingRule("$.xyz", topicB));
+    Collection<RoutingRule> rules = List.of(
+        new RoutingRule("$..*", topicA),
+        new RoutingRule("$..*", topicB),
+        new RoutingRule("$.xyz", topicB));
     Promise<Collection<RoutingRule>> promise = Promise.promise();
     promise.complete(rules);
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
@@ -417,23 +418,23 @@ class AesServiceTest {
   @Test
   void testSendWithNoRestultStatusCode(@Mock RoutingContext ctx, @Mock HttpServerRequest request,
       @Mock HttpServerResponse response) throws InterruptedException {
-    String topicA = "ta";
-    String topicB = "tb";
+    final String topicA = "ta";
+    final String topicB = "tb";
     MultiMap headers = MultiMap.caseInsensitiveMultiMap();
     headers.add("Content-Type", "application/json");
     headers.add(OKAPI_TENANT, "abc");
-    headers.add(OKAPI_TOKEN,
-        "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
+    headers.add(OKAPI_TOKEN, "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhYmMifQ.GHKsHPMokpfAhXrkrmA-"
+        + "qxGEWsCreg2PwOTQUfc4tB8xqDufyR0MApWwwPODD52P86RYZYctrOvX6UBW8NOG5g");
     when(ctx.vertx()).thenReturn(Vertx.vertx());
     when(ctx.request()).thenReturn(request);
     when(ctx.response()).thenReturn(response);
     when(request.headers()).thenReturn(headers);
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     when(ctx.getBody()).thenReturn(Buffer.buffer("{}"));
-    Collection<RoutingRule> rules = new ArrayList<>();
-    rules.add(new RoutingRule("$..*", topicA));
-    rules.add(new RoutingRule("$..*", topicB));
-    rules.add(new RoutingRule("$.xyz", topicB));
+    Collection<RoutingRule> rules = List.of(
+        new RoutingRule("$..*", topicA),
+        new RoutingRule("$..*", topicB),
+        new RoutingRule("$.xyz", topicB));
     Promise<Collection<RoutingRule>> promise = Promise.promise();
     promise.complete(rules);
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());

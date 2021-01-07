@@ -17,22 +17,20 @@ import static org.folio.aes.util.AesConstants.OKAPI_TOKEN_SUB;
 import static org.folio.aes.util.AesConstants.OKAPI_URL;
 import static org.folio.aes.util.AesConstants.TENANT_NONE;
 import static org.folio.aes.util.AesUtils.checkRoutingRules;
-import static org.folio.aes.util.AesUtils.containsPII;
+import static org.folio.aes.util.AesUtils.containsPersonalData;
 import static org.folio.aes.util.AesUtils.convertMultiMapToJsonObject;
 import static org.folio.aes.util.AesUtils.decodeOkapiToken;
 import static org.folio.aes.util.AesUtils.maskPassword;
-
-import java.util.Collection;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.folio.aes.model.RoutingRule;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import java.util.Collection;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.folio.aes.model.RoutingRule;
 
 public class AesService {
 
@@ -46,6 +44,10 @@ public class AesService {
     return getQueueService().stop();
   }
 
+  /**
+   * Handle pre/post filter data from Okapi.
+   * @param ctx the vertx routing context
+   */
   public void prePostHandler(RoutingContext ctx) {
     MultiMap headers = ctx.request().headers();
     boolean skip = false;
@@ -112,8 +114,8 @@ public class AesService {
     final boolean success = isSuccessStatus(ctx.request().headers().get(OKAPI_HANDLER_RESULT));
     final String contentType = ctx.request().headers().get(CONTENT_TYPE);
     Object bodyJson = null;
-    if (success && bodyBuffer.length() > 0 && contentType != null &&
-        contentType.toLowerCase().contains("json")) {
+    if (success && bodyBuffer.length() > 0 && contentType != null
+        && contentType.toLowerCase().contains("json")) {
       try {
         bodyJson = bodyBuffer.toJson();
       } catch (Exception e) {
@@ -122,7 +124,7 @@ public class AesService {
     }
     if (bodyJson != null) {
       maskPassword(bodyJson);
-      data.put(MSG_PII, containsPII(bodyJson));
+      data.put(MSG_PII, containsPersonalData(bodyJson));
       data.put(MSG_BODY, bodyJson);
     } else {
       data.put(MSG_PII, false);

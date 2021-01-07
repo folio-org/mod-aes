@@ -9,6 +9,11 @@ public final class Utils {
     super();
   }
 
+  /**
+   * Retrieve a free port from the ephemeral range.
+   *
+   * @return the next port that is not likely used in the ephemeral range
+   */
   public static int nextFreePort() {
     int maxTries = 10_000;
     do {

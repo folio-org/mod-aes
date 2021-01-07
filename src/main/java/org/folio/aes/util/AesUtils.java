@@ -1,25 +1,26 @@
 package org.folio.aes.util;
 
-import static org.folio.aes.util.AesConstants.*;
-
-import java.util.Base64;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.folio.aes.model.RoutingRule;
+import static org.folio.aes.util.AesConstants.MSG_PW;
+import static org.folio.aes.util.AesConstants.MSG_PW_MASK;
+import static org.folio.aes.util.AesConstants.PII_JSON_PATHS;
+import static org.folio.aes.util.AesConstants.PII_JSON_PATH_CONFIG;
 
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.ParseContext;
 import com.jayway.jsonpath.ReadContext;
-
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.folio.aes.model.RoutingRule;
+
 
 public class AesUtils {
 
@@ -28,16 +29,17 @@ public class AesUtils {
 
   // adjust JsonPath configuration to simplify path checking
   private static final Configuration jpConfig = Configuration.defaultConfiguration()
-    .addOptions(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST);
+      .addOptions(Option.SUPPRESS_EXCEPTIONS, Option.ALWAYS_RETURN_LIST);
   private static final ParseContext parseContext = JsonPath.using(jpConfig);
 
   /**
    * Check routing rules.
    *
-   * @param json
-   * @param routingRules
+   * @param json JSON to check
+   * @param routingRules rules to apply to the JSON
    */
-  public static Set<RoutingRule> checkRoutingRules(String json, Collection<RoutingRule> routingRules) {
+  public static Set<RoutingRule> checkRoutingRules(String json,
+      Collection<RoutingRule> routingRules) {
     Set<RoutingRule> goodOnes = new HashSet<>();
     ReadContext ctx = parseContext.parse(json);
     routingRules.forEach(routingRule -> {
@@ -53,8 +55,8 @@ public class AesUtils {
    * Convert {@link MultiMap} to {@link JsonObject}. Collapse values with same key
    * to an array.
    *
-   * @param multiMap
-   * @return
+   * @param multiMap map to convert to JsonObject
+   * @return JSON object containing the multi map data
    */
   public static JsonObject convertMultiMapToJsonObject(MultiMap multiMap) {
     JsonObject jo = new JsonObject();
@@ -75,6 +77,11 @@ public class AesUtils {
     return jo;
   }
 
+  /**
+   * Mask password.
+   *
+   * @param o either a JsonObject of JsonArray that may contain password fields
+   */
   public static void maskPassword(Object o) {
     if (o instanceof JsonObject) {
       maskPassword((JsonObject) o);
@@ -88,7 +95,7 @@ public class AesUtils {
   /**
    * Mask password.
    *
-   * @param jsonObject
+   * @param jsonObject JSON to check for password data
    */
   public static void maskPassword(JsonObject jsonObject) {
     for (String s : MSG_PW) {
@@ -98,12 +105,18 @@ public class AesUtils {
     }
   }
 
-  public static boolean containsPII(Object o) {
+  /**
+   * Determine whether or not the passed in object contains personal data (PII).
+   *
+   * @param o either a JsonObject or a JsonArray to be checked for personal data
+   * @return whether or not personal data was found
+   */
+  public static boolean containsPersonalData(Object o) {
     if (o instanceof JsonObject) {
-      return containsPII((JsonObject) o);
+      return containsPersonalData((JsonObject) o);
     } else {
       for (Object child : (JsonArray) o) {
-        if (containsPII(child)) {
+        if (containsPersonalData(child)) {
           return true;
         }
       }
@@ -111,7 +124,13 @@ public class AesUtils {
     }
   }
 
-  public static boolean containsPII(JsonObject body) {
+  /**
+   * Determine whether or not the passed in JsonObject contains personal data (PII).
+   *
+   * @param body JSON to be checked for personal data
+   * @return whether or not personal data was found
+   */
+  public static boolean containsPersonalData(JsonObject body) {
     for (final JsonPath jp : PII_JSON_PATHS) {
       final List<String> pathList = jp.read(body.toString(), PII_JSON_PATH_CONFIG);
       if (!pathList.isEmpty()) {
@@ -122,10 +141,10 @@ public class AesUtils {
   }
 
   /**
-   * Decode Okapi token to {@link JsonObject}
+   * Decode Okapi token to {@link JsonObject}.
    *
-   * @param okapiToken
-   * @return
+   * @param okapiToken the Okapi token
+   * @return the decoded token data
    */
   public static JsonObject decodeOkapiToken(String okapiToken) {
     String encodedJson;

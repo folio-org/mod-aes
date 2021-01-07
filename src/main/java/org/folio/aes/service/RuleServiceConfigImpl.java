@@ -8,15 +8,6 @@ import static org.folio.aes.util.AesConstants.OKAPI_AES_FILTER_ID;
 import static org.folio.aes.util.AesConstants.OKAPI_TENANT;
 import static org.folio.aes.util.AesConstants.OKAPI_TOKEN;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.folio.aes.model.RoutingRule;
-
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -25,6 +16,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.HttpRequest;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.folio.aes.model.RoutingRule;
 
 /**
  * Retrieve and cache {@link RoutingRule}s from mod-config.
@@ -39,6 +37,11 @@ public class RuleServiceConfigImpl implements RuleService {
   private final ConcurrentMap<String, Future<Collection<RoutingRule>>> cachedRules;
   private final Vertx vertx;
 
+  /**
+   * Construct a RuleServiceConfigImpl.
+   *
+   * @param vertx the Vert.x instance
+   */
   public RuleServiceConfigImpl(Vertx vertx) {
     this.vertx = vertx;
     this.client = WebClient.create(vertx);
@@ -60,7 +63,8 @@ public class RuleServiceConfigImpl implements RuleService {
     client.close();
   }
 
-  private Future<Collection<RoutingRule>> getFreshRules(String okapiUrl, String tenant, String token) {
+  private Future<Collection<RoutingRule>> getFreshRules(String okapiUrl, String tenant,
+      String token) {
     final Promise<Collection<RoutingRule>> promise = Promise.promise();
     HttpRequest<Buffer> request = client.getAbs(okapiUrl);
     request.putHeader("Accept", "application/json").putHeader(OKAPI_AES_FILTER_ID, "true");
@@ -76,11 +80,11 @@ public class RuleServiceConfigImpl implements RuleService {
         if (response.statusCode() == 200) {
           Collection<RoutingRule> rules = new ArrayList<>();
           response.bodyAsJsonObject().getJsonArray(CONFIG_CONFIGS)
-            .forEach(item -> {
-              JsonObject jo = new JsonObject(((JsonObject) item).getString(CONFIG_VALUE));
-              String topic = String.format("%s_%s", tenant, jo.getString(CONFIG_ROUTING_TARGET));
-              rules.add(new RoutingRule(jo.getString(CONFIG_ROUTING_CRITERIA), topic));
-            });
+              .forEach(item -> {
+                JsonObject jo = new JsonObject(((JsonObject) item).getString(CONFIG_VALUE));
+                String topic = String.format("%s_%s", tenant, jo.getString(CONFIG_ROUTING_TARGET));
+                rules.add(new RoutingRule(jo.getString(CONFIG_ROUTING_CRITERIA), topic));
+              });
           promise.complete(rules);
         } else {
           String errorMsg = response.statusCode() + " " + response.bodyAsString();

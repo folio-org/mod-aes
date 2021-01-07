@@ -2,20 +2,18 @@ package org.folio.aes.service;
 
 import static org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.kafka.client.producer.KafkaProducer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Send message to Kafka queue.
@@ -25,7 +23,8 @@ import io.vertx.kafka.client.producer.KafkaProducer;
  * cd ~/hji/test/kafka-docker/
  * docker-compose -f dc.yml up -d
  * sleep 5
- * docker run -d --rm --name kafdrop -e ZK_HOSTS=10.23.33.20:2181 -e LISTEN=9010 -p9010:9010 thomsch98/kafdrop
+ * docker run -d --rm --name kafdrop -e ZK_HOSTS=10.23.33.20:2181 -e LISTEN=9010 -p9010:9010 \
+ *   thomsch98/kafdrop
  * # check by UI
  * http://10.23.33.20:9010
  * # clean up environment
@@ -35,8 +34,9 @@ import io.vertx.kafka.client.producer.KafkaProducer;
  * public static void main(String[] args) throws Exception {
  *   String kafkaUrl = "10.23.33.20:9092";
  *   Vertx vertx = Vertx.vertx();
- *   QueueService queueService = new QueueServiceKafkaImpl(vertx, kafkaUrl, new KafkaService(), false);
- *   List<CompletableFuture<Void>> futures = new ArrayList<>();
+ *   QueueService queueService = new QueueServiceKafkaImpl(vertx, kafkaUrl,
+ *          new KafkaService(), false);
+ *   List&lt;CompletableFuture&lt;Void&gt;&gt; futures = new ArrayList&lt;&gt;();
  *   for (int i = 0; i < 10; i++) {
  *     futures.add(queueService.send("hji-test", "testing " + i));
  *   }
@@ -52,9 +52,19 @@ public class QueueServiceKafkaImpl implements QueueService {
   private Vertx vertx;
   private String defaultKafkaUrl;
   private KafkaService kafkaService;
-  private ConcurrentMap<String, KafkaProducer<String, String>> producers = new ConcurrentHashMap<>();
+  private ConcurrentMap<String, KafkaProducer<String, String>> producers =
+      new ConcurrentHashMap<>();
 
-  public QueueServiceKafkaImpl(Vertx vertx, String kafkaUrl, KafkaService kafkaService, boolean lazy) {
+  /**
+   * Constructs a QueueServiceKafkaImpl.
+   *
+   * @param vertx the Vert.x instance
+   * @param kafkaUrl the Kafka URL
+   * @param kafkaService the service for interacting with Kafka
+   * @param lazy whether or not to create the producer now or later.
+   */
+  public QueueServiceKafkaImpl(Vertx vertx, String kafkaUrl, KafkaService kafkaService,
+      boolean lazy) {
     this.vertx = vertx;
     this.defaultKafkaUrl = kafkaUrl;
     this.kafkaService = kafkaService;
@@ -84,14 +94,14 @@ public class QueueServiceKafkaImpl implements QueueService {
     final List<Future> futures = new ArrayList<>();
 
     producers.forEach((k, v) -> futures.add(Future.future(promise -> v.close(ar -> {
-        if (ar.succeeded()) {
-          logger.info("{} stopped.", k);
-          promise.complete();
-        } else {
-          logger.warn("{} failed to stop.", k, ar.cause());
-          promise.fail(ar.cause());
-        }
-      }))));
+      if (ar.succeeded()) {
+        logger.info("{} stopped.", k);
+        promise.complete();
+      } else {
+        logger.warn("{} failed to stop.", k, ar.cause());
+        promise.fail(ar.cause());
+      }
+    }))));
 
     return CompositeFuture.all(futures).mapEmpty();
   }

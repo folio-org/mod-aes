@@ -8,9 +8,14 @@ import io.vertx.core.VertxOptions;
 public class AesLauncher {
 
   static {
-    System.setProperty("vertx.logger-delegate-factory-class-name", "io.vertx.core.logging.Log4j2LogDelegateFactory");
+    System.setProperty("vertx.logger-delegate-factory-class-name",
+        "io.vertx.core.logging.Log4j2LogDelegateFactory");
   }
 
+  /**
+   * Development launcher.
+   * @param args application args
+   */
   public static void main(String[] args) {
     int processors = Runtime.getRuntime().availableProcessors();
     DeploymentOptions dopt = new DeploymentOptions().setInstances(processors * 2);
