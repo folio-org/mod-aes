@@ -1,6 +1,5 @@
 package org.folio.aes.service;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.folio.aes.test.Utils.nextFreePort;
 import static org.folio.aes.util.AesConstants.CONFIG_CONFIGS;
 import static org.folio.aes.util.AesConstants.CONFIG_ROUTING_CRITERIA;
@@ -8,7 +7,6 @@ import static org.folio.aes.util.AesConstants.CONFIG_ROUTING_QUERY;
 import static org.folio.aes.util.AesConstants.CONFIG_ROUTING_TARGET;
 import static org.folio.aes.util.AesConstants.CONFIG_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -45,19 +43,13 @@ class RuleServiceConfigImplTest {
       } else {
         r.response().setStatusCode(404).end();
       }
-    }).listen(port, context.completing());
-
-    assertTrue(context.awaitCompletion(5, SECONDS));
-
-    if (context.failed()) {
-      throw context.causeOfFailure();
-    }
+    }).listen(port, context.succeedingThenComplete());
   }
 
   @AfterAll
   @DisplayName("Shut down HTTP server")
   public static void tearDownOnce(Vertx vertx, VertxTestContext context) {
-    vertx.close(context.completing());
+    vertx.close(context.succeedingThenComplete());
   }
 
   @BeforeEach

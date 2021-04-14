@@ -8,6 +8,9 @@ import com.jayway.jsonpath.Option;
 import java.net.URLEncoder;
 import java.util.List;
 
+/**
+ * AES constants.
+ */
 public class AesConstants {
 
   private AesConstants() {

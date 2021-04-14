@@ -39,7 +39,7 @@ class AesVerticleTest {
     final DeploymentOptions opts = new DeploymentOptions();
     opts.setConfig(config);
 
-    vertx.deployVerticle(new AesVerticle(), opts, testContext.completing());
+    vertx.deployVerticle(new AesVerticle(), opts, testContext.succeedingThenComplete());
 
     RestAssured.port = port;
     RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();

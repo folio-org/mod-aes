@@ -1,15 +1,16 @@
 package org.folio.aes;
 
+import static io.reactiverse.junit5.web.TestRequest.bodyResponse;
+import static io.reactiverse.junit5.web.TestRequest.requestHeader;
+import static io.reactiverse.junit5.web.TestRequest.statusCode;
+import static io.reactiverse.junit5.web.TestRequest.testRequest;
 import static io.vertx.core.buffer.Buffer.buffer;
-import static io.vertx.junit5.web.TestRequest.bodyResponse;
-import static io.vertx.junit5.web.TestRequest.requestHeader;
-import static io.vertx.junit5.web.TestRequest.statusCode;
-import static io.vertx.junit5.web.TestRequest.testRequest;
 import static org.folio.aes.test.Utils.nextFreePort;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 
+import io.reactiverse.junit5.web.WebClientOptionsInject;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -21,8 +22,6 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import io.vertx.junit5.web.VertxWebClientExtension;
-import io.vertx.junit5.web.WebClientOptionsInject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.aes.service.AesService;
@@ -44,12 +43,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
  * @author mreno
  *
  */
-// We'll need to fix the deprecation use in this test when we move to Vert.x 4.0. These WebClient
-// classes are being moved to the reactiverse:
-//   * https://github.com/reactiverse/reactiverse-junit5-extensions/
-// There is nothing we can do about it now since the new code is not released yet.
-@SuppressWarnings("deprecation")
-@ExtendWith({VertxExtension.class, VertxWebClientExtension.class, MockitoExtension.class})
+@ExtendWith({VertxExtension.class, MockitoExtension.class})
 class CompressionTest {
   private static Logger log = LogManager.getLogger();
 
@@ -97,7 +91,7 @@ class CompressionTest {
     final DeploymentOptions opts = new DeploymentOptions();
     opts.setConfig(config);
 
-    vertx.deployVerticle(aesVerticle, opts, testContext.completing());
+    vertx.deployVerticle(aesVerticle, opts, testContext.succeedingThenComplete());
 
     log.info("Verticle deployment complete");
   }

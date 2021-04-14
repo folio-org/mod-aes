@@ -2,6 +2,9 @@ package org.folio.aes.model;
 
 import java.util.Objects;
 
+/**
+ * A routing rule is used to determine which messages will be routed via AES.
+ */
 public class RoutingRule {
 
   private final String criteria;

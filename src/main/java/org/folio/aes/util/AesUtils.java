@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Set;
 import org.folio.aes.model.RoutingRule;
 
-
+/**
+ * AES utils.
+ */
 public class AesUtils {
 
   private AesUtils() {
