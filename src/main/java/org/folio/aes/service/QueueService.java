@@ -2,6 +2,9 @@ package org.folio.aes.service;
 
 import io.vertx.core.Future;
 
+/**
+ * The service for sending routed messages to a queue.
+ */
 public interface QueueService {
 
   /**

@@ -4,7 +4,9 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 
-// Just for development
+/**
+ * Just for development.
+ */
 public class AesLauncher {
 
   static {
@@ -14,6 +16,7 @@ public class AesLauncher {
 
   /**
    * Development launcher.
+   *
    * @param args application args
    */
   public static void main(String[] args) {

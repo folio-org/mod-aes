@@ -15,11 +15,11 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <vertx.version>3.9.4</vertx.version>
-    <log4j.version>2.14.0</log4j.version>
-    <rest-assured.version>4.3.2</rest-assured.version>
+    <vertx.version>4.0.3</vertx.version>
+    <log4j.version>2.14.1</log4j.version>
+    <rest-assured.version>4.3.3</rest-assured.version>
     <jsonpath.version>2.4.0</jsonpath.version>
-    <junit.version>5.7.0</junit.version>
+    <junit.version>5.7.1</junit.version>
   </properties>
 
   <repositories>
@@ -53,7 +53,6 @@
     <developerConnection>scm:git:git@github.com:folio-org/mod-aes.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
-
 
   <dependencyManagement>
     <dependencies>
@@ -151,8 +150,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-junit5-web-client</artifactId>
+      <groupId>io.reactiverse</groupId>
+      <artifactId>reactiverse-junit5-web-client</artifactId>
+      <version>0.3.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -179,13 +179,13 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>3.6.0</version>
+      <version>3.9.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-junit-jupiter</artifactId>
-      <version>3.6.0</version>
+      <version>3.9.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -287,17 +287,22 @@
                 <filter>
                   <artifact>*:*</artifact>
                   <excludes>
-                    <exclude>module-info.class</exclude>
+                     <exclude>module-info.class</exclude>
                     <exclude>META-INF/MANIFEST.MF</exclude>
-                    <exclude>META-INF/LICENSE</exclude>
                     <exclude>META-INF/DEPENDENCIES</exclude>
-                    <exclude>META-INF/NOTICE</exclude>
                   </excludes>
                 </filter>
               </filters>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                   <resource>META-INF/io.netty.versions.properties</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer">
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer">
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
+                  <addHeader>false</addHeader>
                 </transformer>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
@@ -334,12 +339,12 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>3.1.1</version>
+        <version>3.1.2</version>
         <dependencies>
           <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>8.35</version>
+            <version>8.41.1</version>
           </dependency>
         </dependencies>
         <executions>

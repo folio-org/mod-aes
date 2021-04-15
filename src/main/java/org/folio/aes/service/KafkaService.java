@@ -7,6 +7,9 @@ import java.util.Properties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * The Kafka service is used to send routed messages to Kafka.
+ */
 public class KafkaService {
 
   private static Logger logger = LogManager.getLogger();

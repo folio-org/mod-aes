@@ -32,6 +32,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.folio.aes.model.RoutingRule;
 
+/**
+ * The AES service.
+ */
 public class AesService {
 
   private static Logger logger = LogManager.getLogger();
@@ -46,6 +49,7 @@ public class AesService {
 
   /**
    * Handle pre/post filter data from Okapi.
+   *
    * @param ctx the vertx routing context
    */
   public void prePostHandler(RoutingContext ctx) {
@@ -106,7 +110,7 @@ public class AesService {
 
   private JsonObject collectData(RoutingContext ctx) {
     final JsonObject data = new JsonObject();
-    data.put(MSG_PATH, ctx.normalisedPath());
+    data.put(MSG_PATH, ctx.normalizedPath());
     data.put(MSG_HEADERS, convertMultiMapToJsonObject(ctx.request().headers()));
     data.put(MSG_PARAMS, convertMultiMapToJsonObject(ctx.request().params()));
     final Buffer bodyBuffer = ctx.getBody() == null ? Buffer.buffer() : ctx.getBody();

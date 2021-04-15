@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Test utils.
+ */
 public final class Utils {
   private Utils() {
     super();

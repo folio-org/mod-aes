@@ -15,6 +15,9 @@ import org.folio.aes.service.QueueServiceKafkaImpl;
 import org.folio.aes.service.QueueServiceLogImpl;
 import org.folio.aes.service.RuleServiceConfigImpl;
 
+/**
+ * The AES main verticle.
+ */
 public class AesVerticle extends AbstractVerticle {
 
   private static final Logger logger = LogManager.getLogger();

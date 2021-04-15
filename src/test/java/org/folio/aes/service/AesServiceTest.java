@@ -115,9 +115,7 @@ class AesServiceTest {
     when(request.params()).thenReturn(MultiMap.caseInsensitiveMultiMap());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
+    await().until(() -> System.currentTimeMillis() > start);
     verifyNoMoreInteractions(ruleService);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService, times(1)).send(eq(TENANT_NONE), argument.capture());
@@ -146,9 +144,7 @@ class AesServiceTest {
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
+    await().until(() -> System.currentTimeMillis() > start);
     verify(ruleService, times(1)).getRules(any(), any(), any());
     verifyNoMoreInteractions(queueService);
   }
@@ -174,9 +170,7 @@ class AesServiceTest {
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
+    await().until(() -> System.currentTimeMillis() > start);
     verify(ruleService, times(1)).getRules(any(), any(), any());
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService).send(eq(defaultTopic), argument.capture());
@@ -212,9 +206,7 @@ class AesServiceTest {
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
+    await().until(() -> System.currentTimeMillis() > start);
     verify(ruleService, times(1)).getRules(any(), any(), any());
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService).send(eq(topicA), argument.capture());
@@ -249,9 +241,7 @@ class AesServiceTest {
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
+    await().until(() -> System.currentTimeMillis() > start);
     verify(ruleService, times(1)).getRules(any(), any(), any());
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService).send(eq(topicA), argument.capture());
@@ -286,9 +276,7 @@ class AesServiceTest {
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
+    await().until(() -> System.currentTimeMillis() > start);
     verify(ruleService, times(1)).getRules(any(), any(), any());
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService).send(eq(topicA), argument.capture());
@@ -324,9 +312,7 @@ class AesServiceTest {
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
+    await().until(() -> System.currentTimeMillis() > start);
     verify(ruleService, times(1)).getRules(any(), any(), any());
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService).send(eq(topicA), argument.capture());
@@ -362,9 +348,7 @@ class AesServiceTest {
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
+    await().until(() -> System.currentTimeMillis() > start);
     verify(ruleService, times(1)).getRules(any(), any(), any());
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService).send(eq(topicA), argument.capture());
@@ -403,9 +387,7 @@ class AesServiceTest {
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
+    await().until(() -> System.currentTimeMillis() > start);
     verify(ruleService, times(1)).getRules(any(), any(), any());
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService).send(eq(topicA), argument.capture());
@@ -440,9 +422,7 @@ class AesServiceTest {
     when(ruleService.getRules(any(), any(), any())).thenReturn(promise.future());
     aesService.prePostHandler(ctx);
     long start = System.currentTimeMillis() + WAIT_TS;
-    await().until(() -> {
-      return System.currentTimeMillis() > start;
-    });
+    await().until(() -> System.currentTimeMillis() > start);
     verify(ruleService, times(1)).getRules(any(), any(), any());
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(queueService).send(eq(topicA), argument.capture());
