@@ -3,8 +3,6 @@
 buildMvn {
   publishModDescriptor = 'yes'
   mvnDeploy = 'yes'
-  publishAPI = 'no'
-  runLintRamlCop = 'no'
   buildNode = 'jenkins-agent-java11'
 
   doDocker = {
