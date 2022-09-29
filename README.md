@@ -5,6 +5,12 @@ Copyright (C) 2017-2021 The Open Library Foundation
 This software is distributed under the terms of the Apache License,
 Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 
+## DEPRECATED
+
+This module has reached it's end of life. It hasn't been maintained since April 2021, and it has security issues.
+
+Don't use!
+
 ## Introduction
 
 The mod-aes module implements FOLIO asynchronous event service (AES). Currently, it acts as a filter to capture traffic as JSON messages. It then routes the messages to different Kafka topic according to JSON path based routing rules that are stored in mod-configuration.
